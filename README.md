@@ -86,11 +86,11 @@ This project is a minimal React-like library for building user interfaces with a
 
 ```js
 export function App() {
-const [count, setCount] = useState(0);
-return div({},
-    h1({}, 'Mini React Example'),
-    button({ onClick: () => setCount(count + 1) }, `Clicked ${count} times`)
-);
+    const [count, setCount] = useState(0);
+    return div({},
+        h1({}, 'Mini React Example'),
+        button({ onClick: () => setCount(count + 1) }, `Clicked ${count} times`)
+    );
 }
 ```
 
