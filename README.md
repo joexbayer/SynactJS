@@ -82,6 +82,9 @@ This project is a minimal React-like library for building user interfaces with a
 7. **Shorthand Tags**
     Use `div`, `h1`, `button`, etc., as functions to create elements.
 
+8. **Bundle (Optional)** 
+    Use `bundle.sh` to bundle all .js files into a single bundle.js file.
+
 ## Example App.js
 
 ```js
