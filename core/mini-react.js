@@ -56,8 +56,14 @@ export function patch(parent, newVNode, oldVNode, index = 0) {
         parent.replaceChild(createElement(newVNode), existing);
     } else if (typeof newVNode !== "string") {
         updateProps(existing, newVNode.props || {}, oldVNode.props || {});
-        const max = Math.max(newVNode.children.length, oldVNode.children.length);
-        for (let i = 0; i < max; i++) {
+
+        // Remove extra old children
+        while (existing.childNodes.length > newVNode.children.length) {
+            existing.removeChild(existing.lastChild);
+        }
+
+        // Patch children
+        for (let i = 0; i < newVNode.children.length; i++) {
             patch(existing, newVNode.children[i], oldVNode.children[i], i);
         }
     }
@@ -74,13 +80,21 @@ export function useState(initialValue) {
         ctx.hooks[i] = {
             value: initialValue,
             set: (newVal) => {
-                ctx.hooks[i].value = newVal;
+                // Always ensure array state stays an array
+                ctx.hooks[i].value = (initialValue instanceof Array && newVal == null) ? [] : newVal;
                 ctx.render();
             }
         };
     }
 
-    return [ctx.hooks[i].value, ctx.hooks[i].set];
+    // Always return an array if initialValue is array and value is falsy
+    let value = ctx.hooks[i].value;
+    if (initialValue instanceof Array && !Array.isArray(value)) {
+        value = [];
+        ctx.hooks[i].value = value;
+    }
+
+    return [value, ctx.hooks[i].set];
 }
 
 export function useEffect(effectFn, deps) {
@@ -97,20 +111,25 @@ export function useEffect(effectFn, deps) {
 }
 
 export function renderApp(componentFn, container) {
-    const ctx = {
-        hooks: [],
-        hookIndex: 0,
-        effects: [],
-        vnode: null,
-        render: () => {
-            ctx.hookIndex = 0;
-            ctx.effects = [];
-            currentComponent = ctx;
-            const newVNode = componentFn();
-            patch(container, newVNode, ctx.vnode);
-            ctx.vnode = newVNode;
-            for (const fn of ctx.effects) fn();
-        }
+    // Store context per container to persist hooks across renders
+    if (!container._miniReactCtx) {
+        container._miniReactCtx = {
+            hooks: [],
+            hookIndex: 0,
+            effects: [],
+            vnode: null,
+            render: null
+        };
+    }
+    const ctx = container._miniReactCtx;
+    ctx.render = () => {
+        ctx.hookIndex = 0;
+        ctx.effects = [];
+        currentComponent = ctx;
+        const newVNode = componentFn();
+        patch(container, newVNode, ctx.vnode);
+        ctx.vnode = newVNode;
+        for (const fn of ctx.effects) fn();
     };
     ctx.render();
 }
@@ -132,15 +151,66 @@ export const input = (props, ...children) => h('input', props, ...children);
 export const form = (props, ...children) => h('form', props, ...children);
 export const label = (props, ...children) => h('label', props, ...children);
 export const a = (props, ...children) => h('a', props, ...children);
+export const nav = (props, ...children) => h('nav', props, ...children);
 
 
 const tags = {
-    div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a
+    div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav
 };
+
+export function useRouter() {
+    const [route, setRoute] = useState(window.location.pathname);
+
+    useEffect(() => {
+        const onPopState = () => setRoute(window.location.pathname);
+        window.addEventListener('popstate', onPopState);
+
+        // Handle clicks on <a> elements
+        const onClick = (e) => {
+            if (
+                e.target.tagName === 'A' &&
+                e.target.href &&
+                e.button === 0 &&
+                !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey &&
+                e.target.origin === window.location.origin
+            ) {
+                e.preventDefault();
+                const path = e.target.pathname;
+                if (path !== route) {
+                    window.history.pushState({}, '', path);
+                    setRoute(path);
+                }
+            }
+        };
+        window.addEventListener('click', onClick);
+
+        return () => {
+            window.removeEventListener('popstate', onPopState);
+            window.removeEventListener('click', onClick);
+        };
+    }, [route]);
+
+    const push = (path) => {
+        if (path !== route) {
+            window.history.pushState({}, '', path);
+            setRoute(path);
+        }
+    };
+
+    return [route, push];
+}
+
+export function Router({ routes, route }) {
+    const match = routes[route] || routes['*'];
+    return match ? match() : null;
+}
 
 Object.assign(window, {
     h,
     useState,
     useEffect,
+    renderApp,
+    Router,
+    useRouter,
     ...tags
 });
