@@ -3,15 +3,17 @@ import { Posts } from './components/posts.js';
 import { Navbar } from './components/navbar.js';
 import { Todo } from './components/todo.js';
 
-export function App() {
+export const ThemeContext = createContext("light");
+
+export function InnerApp() {
     const routes = {
         '/home': () => (
             div({ class: "min-h-screen bg-gray-100 flex flex-col items-center" },
                 h(Navbar, { current: "home" }),
                 h1({ class: "text-3xl font-bold mb-6 text-blue-700" }, 'Mini React'),
                 div({ class: "flex gap-6 mb-8" },
-                    h(Counter, { label: 'A', key: '1' }),
-                    h(Counter, { label: 'B', key: '2' }),
+                    h(Counter, { label: 'A' }),
+                    h(Counter, { label: 'B' }),
                 ),
             )
         ),
@@ -45,7 +47,9 @@ export function App() {
                         href: "/posts",
                         class: "px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
                     }, "View Posts")
-                )
+                ),
+                h(Counter, { label: 'A' }),
+
             )
         ),
         '*': () => (
@@ -56,5 +60,12 @@ export function App() {
         )
     };
 
-    return div({}, h(RouteView, { routes }))
+    return h(RouteView, { routes })
+}
+
+export function App() {
+    return h(ThemeContext.Provider, {
+        value: "dark",
+        children: h(InnerApp)
+    });
 }

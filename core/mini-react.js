@@ -19,6 +19,10 @@ export function createElement(vnode, parentId = "", index = 0) {
         return document.createTextNode(String(vnode));
     }
 
+    if (!vnode || typeof vnode !== "object" || !vnode.__type) {
+        throw new Error("Invalid vnode: " + JSON.stringify(vnode));
+    }
+
     if (typeof vnode.__type === "function") {
         throw new Error("createElement should not be called with functional components.");
     }
@@ -33,9 +37,9 @@ export function createElement(vnode, parentId = "", index = 0) {
 }
 
 // === resolveVNode ===
-function resolveVNode(vnode, parent, index) {
+function resolveVNode(vnode, parent, index, parentId = "") {
     while (vnode && typeof vnode.__type === "function") {
-        vnode = renderComponent(vnode, parent, index);
+        vnode = renderComponent(vnode, parent, index, parentId);
     }
     return vnode;
 }
@@ -75,9 +79,10 @@ function getComponentId(vnode, parentId, index) {
 
 function renderComponent(vnode, parent, index, parentId = "") {
     const id = getComponentId(vnode, parentId, index);
-    console.log("Component ID:", id);
-
     let ctx = contextMap.get(id);
+
+    const prev = currentComponent;
+
     if (!ctx) {
         ctx = {
             hooks: [],
@@ -87,34 +92,39 @@ function renderComponent(vnode, parent, index, parentId = "") {
             parent,
             index,
             render: null,
-            renderedVNode: null
+            renderedVNode: null,
+            providedContexts: new Map(),
+            parentContext: prev, // ✅ parentContext assigned on initial creation
         };
+
+        contextMap.set(id, ctx);
 
         ctx.render = () => {
             ctx.hookIndex = 0;
             ctx.effects = [];
             currentComponent = ctx;
+            ctx.parentContext = prev; // ✅ also assign during render() in case nesting changes
             const outputVNode = ctx.vnode.__type(ctx.vnode.props);
             patch(ctx.parent, outputVNode, ctx.renderedVNode, ctx.index, id);
             ctx.renderedVNode = outputVNode;
             currentComponent = null;
             ctx.effects.forEach(fn => fn());
         };
-
-        contextMap.set(id, ctx);
     }
+
+    currentComponent = ctx;
 
     ctx.hookIndex = 0;
     ctx.effects = [];
     ctx.vnode = vnode;
     ctx.parent = parent;
     ctx.index = index;
-    currentComponent = ctx;
+    ctx.parentContext = prev; // ✅ FIX: always assign latest parent context
 
     const output = vnode.__type(vnode.props);
     ctx.renderedVNode = output;
 
-    currentComponent = null;
+    currentComponent = prev;
     ctx.effects.forEach(fn => fn());
 
     return ctx.renderedVNode;
@@ -170,6 +180,8 @@ export function useState(initialValue) {
     const ctx = currentComponent;
     const i = ctx.hookIndex++;
 
+    console.log(ctx)
+
     if (!ctx.hooks[i]) {
         ctx.hooks[i] = {
             value: initialValue,
@@ -195,6 +207,40 @@ export function useEffect(effectFn, deps) {
     }
 }
 
+// === Context ===
+export function createContext(defaultValue) {
+    const id = Symbol("context");
+    const context = {
+        id,
+        defaultValue,
+        Provider: ({ value, children }) => {
+            console.log(currentComponent, "Provider called with value:", value);
+
+            const ctx = currentComponent;
+            if (!ctx) throw new Error("Provider must be used inside a component");
+            ctx.providedContexts.set(id, value); // changed
+            return children;
+        }
+    };
+    return context;
+}
+
+export function useContext(context) {
+    let ctx = currentComponent;
+    const searched = [];
+
+    while (ctx) {
+        searched.push(ctx.vnode?.__type?.name);
+        if (ctx.providedContexts?.has(context.id)) {
+            return ctx.providedContexts.get(context.id);
+        }
+        ctx = ctx.parentContext;
+    }
+
+    console.warn("⚠️ Context default used:", context.defaultValue, "after searching:", searched);
+    return context.defaultValue;
+}
+
 // === App Rendering ===
 export function renderApp(componentFn, container) {
     const ctx = {
@@ -202,7 +248,9 @@ export function renderApp(componentFn, container) {
         hookIndex: 0,
         effects: [],
         vnode: null,
-        render: null
+        render: null,
+        providedContexts: new Map(),
+        parentContext: null
     };
 
     ctx.render = () => {
@@ -289,10 +337,13 @@ export function RouteView({ routes }) {
     return div({}, match ? match() : null);
 }
 
+// === Dev Exposure ===
 Object.assign(window, {
     h,
     useState,
     useEffect,
+    useContext,
+    createContext,
     renderApp,
     RouteView,
     Fragment,
