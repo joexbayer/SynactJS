@@ -1,7 +1,6 @@
 // === Virtual DOM & Internal State ===
 let currentComponent = null;
 const contextMap = new Map();
-const componentStack = [];
 
 // === h() ===
 export function h(type, props = {}, ...children) {
@@ -93,8 +92,6 @@ function renderComponent(vnode, parent, index, parentId = "") {
             index,
             render: null,
             renderedVNode: null,
-            providedContexts: new Map(),
-            parentContext: prev, // ✅ parentContext assigned on initial creation
         };
 
         contextMap.set(id, ctx);
@@ -103,7 +100,6 @@ function renderComponent(vnode, parent, index, parentId = "") {
             ctx.hookIndex = 0;
             ctx.effects = [];
             currentComponent = ctx;
-            ctx.parentContext = prev; // ✅ also assign during render() in case nesting changes
             const outputVNode = ctx.vnode.__type(ctx.vnode.props);
             patch(ctx.parent, outputVNode, ctx.renderedVNode, ctx.index, id);
             ctx.renderedVNode = outputVNode;
@@ -119,7 +115,6 @@ function renderComponent(vnode, parent, index, parentId = "") {
     ctx.vnode = vnode;
     ctx.parent = parent;
     ctx.index = index;
-    ctx.parentContext = prev; // ✅ FIX: always assign latest parent context
 
     const output = vnode.__type(vnode.props);
     ctx.renderedVNode = output;
@@ -180,8 +175,6 @@ export function useState(initialValue) {
     const ctx = currentComponent;
     const i = ctx.hookIndex++;
 
-    console.log(ctx)
-
     if (!ctx.hooks[i]) {
         ctx.hooks[i] = {
             value: initialValue,
@@ -208,36 +201,26 @@ export function useEffect(effectFn, deps) {
 }
 
 // === Context ===
+const globalContexts = new Map(); // 🌐 Global context store
+
 export function createContext(defaultValue) {
     const id = Symbol("context");
     const context = {
         id,
         defaultValue,
         Provider: ({ value, children }) => {
-            console.log(currentComponent, "Provider called with value:", value);
-
-            const ctx = currentComponent;
-            if (!ctx) throw new Error("Provider must be used inside a component");
-            ctx.providedContexts.set(id, value); // changed
-            return children;
+            globalContexts.set(id, value); // 🌐 Set globally
+            return Array.isArray(children) ? h(Fragment, {}, ...children) : children;
         }
     };
     return context;
 }
 
 export function useContext(context) {
-    let ctx = currentComponent;
-    const searched = [];
-
-    while (ctx) {
-        searched.push(ctx.vnode?.__type?.name);
-        if (ctx.providedContexts?.has(context.id)) {
-            return ctx.providedContexts.get(context.id);
-        }
-        ctx = ctx.parentContext;
+    if (globalContexts.has(context.id)) {
+        return globalContexts.get(context.id);
     }
-
-    console.warn("⚠️ Context default used:", context.defaultValue, "after searching:", searched);
+    console.warn("⚠️ Global context default used:", context.defaultValue);
     return context.defaultValue;
 }
 
@@ -249,15 +232,12 @@ export function renderApp(componentFn, container) {
         effects: [],
         vnode: null,
         render: null,
-        providedContexts: new Map(),
-        parentContext: null
     };
 
     ctx.render = () => {
         ctx.hookIndex = 0;
         ctx.effects = [];
         currentComponent = ctx;
-        componentStack.length = 0;
         const newVNode = h(componentFn);
         patch(container, newVNode, ctx.vnode);
         ctx.vnode = newVNode;
@@ -348,5 +328,7 @@ Object.assign(window, {
     RouteView,
     Fragment,
     useRouter,
+    contextMap,
+    globalContexts,
     div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav
 });
