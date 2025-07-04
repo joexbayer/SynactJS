@@ -19,13 +19,14 @@ export function Posts() {
     return Card({
         content: [
             Heading({ text: 'Latest Posts' }),
-            loading ? [Paragraph({ text: 'Loading...' })]
-            : posts.map(post =>
-                div({ key: post.id },
-                    PostTitle({ text: post.title }),
-                    Paragraph({ text: post.body })
+            loading
+                ? [h(Paragraph, { text: 'Loading...' })]
+                : posts.map(post =>
+                    h('div', { key: post.id },
+                        PostTitle({ text: post.title }),
+                        Paragraph({ text: post.body })
+                    )
                 )
-            )
         ]
     });
 }

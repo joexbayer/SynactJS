@@ -75,6 +75,12 @@ This project is a minimal React-like library for building user interfaces with a
     }
     ```
 
+    When using using components with state (useState or useEffect) you need to wrap them in a h() tag.
+    ```js
+    h(Counter, { label: 'A' })
+    ```
+    Else their state wont work.
+
 6. **Using Hooks**
     - `useState(initialValue)` for state
     - `useEffect(effectFn, deps)` for side effects

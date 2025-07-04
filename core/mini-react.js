@@ -1,21 +1,46 @@
-// === Virtual DOM ===
+// === Virtual DOM & Internal State ===
+let currentComponent = null;
+const contextMap = new Map();
+const componentStack = [];
+
+// === h() ===
 export function h(type, props = {}, ...children) {
-    return { type, props, children: children.flat() };
+    return {
+        __type: type,
+        props,
+        children: children.flat(),
+        key: props?.key ?? null
+    };
 }
 
-export function createElement(vnode) {
+// === createElement ===
+export function createElement(vnode, parentId = "", index = 0) {
     if (typeof vnode === "string" || typeof vnode === "number") {
         return document.createTextNode(String(vnode));
     }
 
-    const el = document.createElement(vnode.type);
+    if (typeof vnode.__type === "function") {
+        throw new Error("createElement should not be called with functional components.");
+    }
+
+    const el = document.createElement(vnode.__type);
     setProps(el, vnode.props || {});
-    for (const child of vnode.children) {
-        el.appendChild(createElement(child));
+    for (let i = 0; i < (vnode.children || []).length; i++) {
+        const child = vnode.children[i];
+        el.appendChild(createElement(resolveVNode(child, el, i, `${parentId}/${vnode.__type}:${vnode.key ?? index}`), parentId, i));
     }
     return el;
 }
 
+// === resolveVNode ===
+function resolveVNode(vnode, parent, index) {
+    while (vnode && typeof vnode.__type === "function") {
+        vnode = renderComponent(vnode, parent, index);
+    }
+    return vnode;
+}
+
+// === DOM Props ===
 export function setProps(el, props) {
     for (const key in props) {
         if (key.startsWith("on")) {
@@ -27,8 +52,8 @@ export function setProps(el, props) {
 }
 
 export function updateProps(el, newProps, oldProps) {
-    const allProps = new Set([...Object.keys(newProps), ...Object.keys(oldProps)]);
-    for (const key of allProps) {
+    const all = new Set([...Object.keys(newProps), ...Object.keys(oldProps)]);
+    for (const key of all) {
         const n = newProps[key];
         const o = oldProps[key];
         if (n !== o) {
@@ -43,35 +68,104 @@ export function updateProps(el, newProps, oldProps) {
     }
 }
 
-export function patch(parent, newVNode, oldVNode, index = 0) {
+// === Component Context & Render ===
+function getComponentId(vnode, parentId, index) {
+    return `${parentId}/${vnode.__type.name}:${vnode.key ?? index}`;
+}
+
+function renderComponent(vnode, parent, index, parentId = "") {
+    const id = getComponentId(vnode, parentId, index);
+    console.log("Component ID:", id);
+
+    let ctx = contextMap.get(id);
+    if (!ctx) {
+        ctx = {
+            hooks: [],
+            hookIndex: 0,
+            effects: [],
+            vnode,
+            parent,
+            index,
+            render: null,
+            renderedVNode: null
+        };
+
+        ctx.render = () => {
+            ctx.hookIndex = 0;
+            ctx.effects = [];
+            currentComponent = ctx;
+            const outputVNode = ctx.vnode.__type(ctx.vnode.props);
+            patch(ctx.parent, outputVNode, ctx.renderedVNode, ctx.index, id);
+            ctx.renderedVNode = outputVNode;
+            currentComponent = null;
+            ctx.effects.forEach(fn => fn());
+        };
+
+        contextMap.set(id, ctx);
+    }
+
+    ctx.hookIndex = 0;
+    ctx.effects = [];
+    ctx.vnode = vnode;
+    ctx.parent = parent;
+    ctx.index = index;
+    currentComponent = ctx;
+
+    const output = vnode.__type(vnode.props);
+    ctx.renderedVNode = output;
+
+    currentComponent = null;
+    ctx.effects.forEach(fn => fn());
+
+    return ctx.renderedVNode;
+}
+// === patch() ===
+export function patch(parent, newVNode, oldVNode, index = 0, parentId = "") {
     const existing = parent.childNodes[index];
 
     if (!oldVNode) {
-        parent.appendChild(createElement(newVNode));
-    } else if (!newVNode) {
+        const vnode = resolveVNode(newVNode, parent, index, parentId);
+        const el = createElement(vnode, parentId, index);
+        parent.appendChild(el);
+        return;
+    }
+
+    if (!newVNode) {
         parent.removeChild(existing);
-    } else if (typeof newVNode !== typeof oldVNode ||
+        return;
+    }
+
+    if (
+        typeof newVNode !== typeof oldVNode ||
         (typeof newVNode === "string" && newVNode !== oldVNode) ||
-        newVNode.type !== oldVNode.type) {
-        parent.replaceChild(createElement(newVNode), existing);
-    } else if (typeof newVNode !== "string") {
-        updateProps(existing, newVNode.props || {}, oldVNode.props || {});
+        newVNode.__type !== oldVNode.__type
+    ) {
+        const vnode = resolveVNode(newVNode, parent, index, parentId);
+        parent.replaceChild(createElement(vnode, parentId, index), existing);
+        return;
+    }
 
-        // Remove extra old children
-        while (existing.childNodes.length > newVNode.children.length) {
-            existing.removeChild(existing.lastChild);
-        }
+    if (typeof newVNode.__type === "function") {
+        const newChild = renderComponent(newVNode, parent, index, parentId);
+        const oldChild = contextMap.get(getComponentId(oldVNode, parentId, index))?.vnode;
+        patch(parent, newChild, oldChild, index, parentId);
+        return;
+    }
 
-        // Patch children
-        for (let i = 0; i < newVNode.children.length; i++) {
-            patch(existing, newVNode.children[i], oldVNode.children[i], i);
-        }
+    updateProps(existing, newVNode.props || {}, oldVNode.props || {});
+    const newChildren = newVNode.children || [];
+    const oldChildren = oldVNode.children || [];
+
+    while (existing.childNodes.length > newChildren.length) {
+        existing.removeChild(existing.lastChild);
+    }
+
+    for (let i = 0; i < newChildren.length; i++) {
+        patch(existing, newChildren[i], oldChildren[i], i, `${parentId}/${newVNode.__type}:${newVNode.key ?? index}`);
     }
 }
 
-// === Hooks and Runtime ===
-let currentComponent = null;
-
+// === Hooks ===
 export function useState(initialValue) {
     const ctx = currentComponent;
     const i = ctx.hookIndex++;
@@ -80,27 +174,18 @@ export function useState(initialValue) {
         ctx.hooks[i] = {
             value: initialValue,
             set: (newVal) => {
-                // Always ensure array state stays an array
-                ctx.hooks[i].value = (initialValue instanceof Array && newVal == null) ? [] : newVal;
-                ctx.render();
+                ctx.hooks[i].value = newVal;
+                if (ctx.render) ctx.render();
             }
         };
     }
 
-    // Always return an array if initialValue is array and value is falsy
-    let value = ctx.hooks[i].value;
-    if (initialValue instanceof Array && !Array.isArray(value)) {
-        value = [];
-        ctx.hooks[i].value = value;
-    }
-
-    return [value, ctx.hooks[i].set];
+    return [ctx.hooks[i].value, ctx.hooks[i].set];
 }
 
 export function useEffect(effectFn, deps) {
     const ctx = currentComponent;
     const i = ctx.hookIndex++;
-
     const prev = ctx.hooks[i];
     const changed = !prev || !deps || deps.some((dep, j) => !Object.is(dep, prev.deps?.[j]));
 
@@ -110,89 +195,83 @@ export function useEffect(effectFn, deps) {
     }
 }
 
+// === App Rendering ===
 export function renderApp(componentFn, container) {
-    // Store context per container to persist hooks across renders
-    if (!container._miniReactCtx) {
-        container._miniReactCtx = {
-            hooks: [],
-            hookIndex: 0,
-            effects: [],
-            vnode: null,
-            render: null
-        };
-    }
-    const ctx = container._miniReactCtx;
+    const ctx = {
+        hooks: [],
+        hookIndex: 0,
+        effects: [],
+        vnode: null,
+        render: null
+    };
+
     ctx.render = () => {
         ctx.hookIndex = 0;
         ctx.effects = [];
         currentComponent = ctx;
-        const newVNode = componentFn();
+        componentStack.length = 0;
+        const newVNode = h(componentFn);
         patch(container, newVNode, ctx.vnode);
         ctx.vnode = newVNode;
-        for (const fn of ctx.effects) fn();
+        currentComponent = null;
+        ctx.effects.forEach(fn => fn());
     };
+
     ctx.render();
 }
 
-// === Shorthand Tag Functions ===
-export const div = (props, ...children) => h('div', props, ...children);
-export const h1 = (props, ...children) => h('h1', props, ...children);
-export const h2 = (props, ...children) => h('h2', props, ...children);
-export const h3 = (props, ...children) => h('h3', props, ...children);
-export const h4 = (props, ...children) => h('h4', props, ...children);
-export const h5 = (props, ...children) => h('h5', props, ...children);
-export const p = (props, ...children) => h('p', props, ...children);
-export const button = (props, ...children) => h('button', props, ...children);
-export const strong = (props, ...children) => h('strong', props, ...children);
-export const span = (props, ...children) => h('span', props, ...children);
-export const ul = (props, ...children) => h('ul', props, ...children);
-export const li = (props, ...children) => h('li', props, ...children);
-export const input = (props, ...children) => h('input', props, ...children);
-export const form = (props, ...children) => h('form', props, ...children);
-export const label = (props, ...children) => h('label', props, ...children);
-export const a = (props, ...children) => h('a', props, ...children);
-export const nav = (props, ...children) => h('nav', props, ...children);
+// === Shorthand Tags ===
+const tag = (t) => (p, ...c) => h(t, p, ...c);
+export const div = tag('div');
+export const h1 = tag('h1');
+export const h2 = tag('h2');
+export const h3 = tag('h3');
+export const h4 = tag('h4');
+export const h5 = tag('h5');
+export const p = tag('p');
+export const button = tag('button');
+export const strong = tag('strong');
+export const span = tag('span');
+export const ul = tag('ul');
+export const li = tag('li');
+export const input = tag('input');
+export const form = tag('form');
+export const label = tag('label');
+export const a = tag('a');
+export const nav = tag('nav');
 
-
-const tags = {
-    div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav
-};
-
+// === Router ===
 export function useRouter() {
     const [route, setRoute] = useState(window.location.pathname);
 
     useEffect(() => {
-        const onPopState = () => setRoute(window.location.pathname);
-        window.addEventListener('popstate', onPopState);
+        const onPop = () => setRoute(window.location.pathname);
+        window.addEventListener("popstate", onPop);
 
-        // Handle clicks on <a> elements
         const onClick = (e) => {
-            if (
-                e.target.tagName === 'A' &&
-                e.target.href &&
-                e.button === 0 &&
+            const t = e.target.closest("a");
+            if (t && t.href && !e.defaultPrevented && e.button === 0 &&
                 !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey &&
-                e.target.origin === window.location.origin
-            ) {
+                t.origin === location.origin) {
                 e.preventDefault();
-                const path = e.target.pathname;
+                const path = t.pathname;
                 if (path !== route) {
-                    window.history.pushState({}, '', path);
+                    history.pushState({}, '', path);
                     setRoute(path);
                 }
             }
         };
-        window.addEventListener('click', onClick);
+        window.addEventListener("click", onClick);
 
         return () => {
-            window.removeEventListener('popstate', onPopState);
-            window.removeEventListener('click', onClick);
+            window.removeEventListener("popstate", onPop);
+            window.removeEventListener("click", onClick);
         };
     }, [route]);
 
     const push = (path) => {
         if (path !== route) {
-            window.history.pushState({}, '', path);
+            history.pushState({}, '', path);
             setRoute(path);
         }
     };
@@ -200,9 +279,14 @@ export function useRouter() {
     return [route, push];
 }
 
-export function Router({ routes, route }) {
+export function Fragment(props) {
+    return props.children;
+}
+
+export function RouteView({ routes }) {
+    const [route] = useRouter();
     const match = routes[route] || routes['*'];
-    return match ? match() : null;
+    return div({}, match ? match() : null);
 }
 
 Object.assign(window, {
@@ -210,7 +294,8 @@ Object.assign(window, {
     useState,
     useEffect,
     renderApp,
-    Router,
+    RouteView,
+    Fragment,
     useRouter,
-    ...tags
+    div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav
 });
