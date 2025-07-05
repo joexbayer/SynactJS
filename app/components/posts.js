@@ -14,15 +14,12 @@ export function Posts() {
             });
     }, []);
 
-    console.log(posts, setPosts, loading, setLoading);
-
     return Card({
         content: [
             Heading({ text: 'Latest Posts' }),
-            loading
-                ? [h(Paragraph, { text: 'Loading...' })]
+            loading ? [Paragraph({ text: 'Loading...' })]
                 : posts.map(post =>
-                    h('div', { key: post.id },
+                    div( { key: post.id },
                         PostTitle({ text: post.title }),
                         Paragraph({ text: post.body })
                     )

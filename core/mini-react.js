@@ -1,6 +1,7 @@
 // === Virtual DOM & Internal State ===
 let currentComponent = null;
 const contextMap = new Map();
+const globalContexts = new Map();
 
 // === h() ===
 export function h(type, props = {}, ...children) {
@@ -76,12 +77,14 @@ function getComponentId(vnode, parentId, index) {
     return `${parentId}/${vnode.__type.name}:${vnode.key ?? index}`;
 }
 
+/* Function creates contexts for each component and renders them */ 
 function renderComponent(vnode, parent, index, parentId = "") {
     const id = getComponentId(vnode, parentId, index);
     let ctx = contextMap.get(id);
 
     const prev = currentComponent;
 
+    /* State is created once per component instance, then reused on next render */
     if (!ctx) {
         ctx = {
             hooks: [],
@@ -101,13 +104,18 @@ function renderComponent(vnode, parent, index, parentId = "") {
             ctx.effects = [];
             currentComponent = ctx;
             const outputVNode = ctx.vnode.__type(ctx.vnode.props);
+
+            /* Idea is to only path the DOM from the previous renderedVNode to the new outputVNode */ 
             patch(ctx.parent, outputVNode, ctx.renderedVNode, ctx.index, id);
             ctx.renderedVNode = outputVNode;
             currentComponent = null;
+
+            /* Run all effects after the render is complete */
             ctx.effects.forEach(fn => fn());
         };
     }
 
+    /* Reset hook index and effects for each render */
     currentComponent = ctx;
 
     ctx.hookIndex = 0;
@@ -124,6 +132,7 @@ function renderComponent(vnode, parent, index, parentId = "") {
 
     return ctx.renderedVNode;
 }
+
 // === patch() ===
 export function patch(parent, newVNode, oldVNode, index = 0, parentId = "") {
     const existing = parent.childNodes[index];
@@ -140,18 +149,17 @@ export function patch(parent, newVNode, oldVNode, index = 0, parentId = "") {
         return;
     }
 
-    if (
-        typeof newVNode !== typeof oldVNode ||
-        (typeof newVNode === "string" && newVNode !== oldVNode) ||
-        newVNode.__type !== oldVNode.__type
-    ) {
+    if (typeof newVNode !== typeof oldVNode || (typeof newVNode === "string" && newVNode !== oldVNode) || newVNode.__type !== oldVNode.__type) {
         const vnode = resolveVNode(newVNode, parent, index, parentId);
         parent.replaceChild(createElement(vnode, parentId, index), existing);
         return;
     }
 
+    /* Handle functional components */
     if (typeof newVNode.__type === "function") {
         const newChild = renderComponent(newVNode, parent, index, parentId);
+
+        /* If the oldVNode is a functional component, we need to patch it */
         const oldChild = contextMap.get(getComponentId(oldVNode, parentId, index))?.vnode;
         patch(parent, newChild, oldChild, index, parentId);
         return;
@@ -161,10 +169,12 @@ export function patch(parent, newVNode, oldVNode, index = 0, parentId = "") {
     const newChildren = newVNode.children || [];
     const oldChildren = oldVNode.children || [];
 
+    /* Clean up old children */
     while (existing.childNodes.length > newChildren.length) {
         existing.removeChild(existing.lastChild);
     }
 
+    /* Add new children */
     for (let i = 0; i < newChildren.length; i++) {
         patch(existing, newChildren[i], oldChildren[i], i, `${parentId}/${newVNode.__type}:${newVNode.key ?? index}`);
     }
@@ -201,7 +211,6 @@ export function useEffect(effectFn, deps) {
 }
 
 // === Context ===
-const globalContexts = new Map(); // 🌐 Global context store
 
 export function createContext(defaultValue) {
     const id = Symbol("context");
@@ -209,7 +218,7 @@ export function createContext(defaultValue) {
         id,
         defaultValue,
         Provider: ({ value, children }) => {
-            globalContexts.set(id, value); // 🌐 Set globally
+            globalContexts.set(id, value);
             return Array.isArray(children) ? h(Fragment, {}, ...children) : children;
         }
     };
@@ -220,7 +229,6 @@ export function useContext(context) {
     if (globalContexts.has(context.id)) {
         return globalContexts.get(context.id);
     }
-    console.warn("⚠️ Global context default used:", context.defaultValue);
     return context.defaultValue;
 }
 
@@ -238,6 +246,8 @@ export function renderApp(componentFn, container) {
         ctx.hookIndex = 0;
         ctx.effects = [];
         currentComponent = ctx;
+
+        /* Create initial component / node */
         const newVNode = h(componentFn);
         patch(container, newVNode, ctx.vnode);
         ctx.vnode = newVNode;
@@ -317,18 +327,87 @@ export function RouteView({ routes }) {
     return div({}, match ? match() : null);
 }
 
+export function useMemo(factory, deps) {
+    const ctx = currentComponent;
+    const i = ctx.hookIndex++;
+    const prev = ctx.hooks[i];
+
+    if (!prev || !deps || deps.some((dep, j) => !Object.is(dep, prev.deps?.[j]))) {
+        const value = factory();
+        ctx.hooks[i] = { value, deps };
+        return value;
+    }
+    return prev.value;
+}
+
+export function useCallback(callback, deps) {
+    return useMemo(() => callback, deps);
+}
+
 // === Dev Exposure ===
 Object.assign(window, {
     h,
     useState,
     useEffect,
     useContext,
+    useMemo,
+    useCallback,
+    createContext,
+    RouteView,
+    Fragment,
+    useRouter,
+    div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav
+});
+
+
+const MiniReact = {
+    h,
+    useState,
+    useEffect,
+    useContext,
+    useMemo,
+    useCallback,
     createContext,
     renderApp,
     RouteView,
     Fragment,
     useRouter,
-    contextMap,
-    globalContexts,
-    div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav
+    div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav,
+
+    components: [],
+    register: function(component) {
+        console.log(`Registering component: ${component.name}`);
+        this.components.push(component);
+    }
+};
+window.miniReact = MiniReact;
+Object.assign(window, { MiniReact})
+
+/* Auto-attach components to elements with data-component attribute on DOMContentLoaded */
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("[data-component]").forEach(el => {
+        const name = el.getAttribute("data-component")?.trim();
+        const comp = window.miniReact.components.find(c => c.name === name) || window[name];
+
+        /* Parse data-prop attribute as JSON */
+        let props = {};
+        const dataProp = el.getAttribute("data-prop");
+        if (dataProp) {
+            try {
+                props = JSON.parse(dataProp);
+            } catch (e) {
+                console.warn(`Invalid JSON in data-prop for component ${name}:`, e);
+            }
+        }
+
+        if (typeof comp === "function") {
+            console.log(`Attaching component: ${name}`);
+            window.miniReact.renderApp(
+                Object.keys(props).length
+                    ? (p) => comp({ ...props, ...p })
+                    : comp,
+                el
+            );
+        }
+    });
 });

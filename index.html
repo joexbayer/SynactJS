@@ -5,11 +5,37 @@
     <meta charset="UTF-8" />
     <title>Mini React</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script type="module" src="./core/mini-react.js"></script>
 </head>
 
 <body>
-    <div id="app"></div>
+    <!-- Full App example -->
+    <div data-component="App"></div>
     <script type="module" src="./main.js"></script>
+    
+    <!-- Simple Counter component example -->
+    <div data-component="Counter" data-prop='{"label":"Counter A"}'></div>
+    <script>
+        function Counter({ label = 'Counter' }) {
+            const [count, setCount] = useState(0);
+
+            useEffect(() => {
+                console.log(`[${label}] count is now ${count}`);
+            }, [count]);
+
+            return div({ class: 'card p-6 bg-white rounded shadow flex flex-col items-center gap-4' },
+                h3({ class: 'text-xl font-bold' }, label),
+                p({ class: 'text-gray-700' }, `Count: ${count}`),
+                button({
+                    class: 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition',
+                    onClick: () => setCount(count + 1)
+                }, 'Click')
+            );
+        }
+
+        MiniReact.register(Counter);
+    </script>
+
 </body>
 
 </html>

@@ -1,6 +1,6 @@
 import { ThemeContext } from "../app.js";
 
-export function Counter({ label }) {
+export function Counter({ label = 'Counter' }) {
     const [count, setCount] = useState(0);
 
     const theme = useContext(ThemeContext);

@@ -63,8 +63,7 @@ This project is a minimal React-like library for building user interfaces with a
 
         return div({ class: 'card' },
             h3({}, 'Latest Posts'),
-            loading
-                ? p({}, 'Loading...')
+            loading ? p({}, 'Loading...')
                 : posts.map(post =>
                     div({ key: post.id },
                         strong({}, post.title),
@@ -109,6 +108,16 @@ python3 -m http.server
 ```
 
 In the root folder
+
+## TODO
+
+1. Add useEffect return on unmount
+2. Add useMemo and useCallback
+
+
+https://react.dev/learn/tutorial-tic-tac-toe
+
+Live demo?
 
 ## License
 

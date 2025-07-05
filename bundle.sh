@@ -4,7 +4,7 @@ ENTRY="main.js"
 OUTPUT="bundle.js"
 > "$OUTPUT"
 
-declare -A VISITED
+VISITED=()
 INCLUDED_FILES=()
 
 # Recursively resolve and inline a JS file
@@ -13,10 +13,12 @@ bundle_file() {
   local abs_path
   abs_path=$(realpath "$file")
 
-  if [[ ${VISITED["$abs_path"]} ]]; then
-    return
-  fi
-  VISITED["$abs_path"]=1
+  for visited in "${VISITED[@]}"; do
+    if [[ "$visited" == "$abs_path" ]]; then
+      return
+    fi
+  done
+  VISITED+=("$abs_path")
   INCLUDED_FILES+=("$file")
 
   echo "📦 Including: $file"
