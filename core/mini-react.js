@@ -24,7 +24,6 @@ function h(type, props = {}, ...children) {
     };
 }
 
-// === createElement ===
 function createElement(vnode, parentId = "", index = 0) {
     if (typeof vnode === "string" || typeof vnode === "number") {
         return document.createTextNode(String(vnode));
@@ -40,20 +39,27 @@ function createElement(vnode, parentId = "", index = 0) {
 
     const el = document.createElement(vnode.__type);
     setProps(el, vnode.props || {});
+
+    const thisId = getComponentId(vnode, parentId, index);
     for (let i = 0; i < (vnode.children || []).length; i++) {
         const child = vnode.children[i];
-        el.appendChild(createElement(resolveVNode(child, el, i, `${parentId}/${vnode.__type}:${vnode.key ?? index}`), parentId, i));
+        el.appendChild(createElement(resolveVNode(child, el, i, thisId), thisId, i));
     }
+
     return el;
 }
 
 // === resolveVNode ===
 function resolveVNode(vnode, parent, index, parentId = "") {
     while (vnode && typeof vnode.__type === "function") {
+        const id = getComponentId(vnode, parentId, index);
         vnode = renderComponent(vnode, parent, index, parentId);
+        parentId = id;  // Update parentId to reflect real component position
     }
+    console.log(`Resolved vnode: ${parentId} at index ${index}`, vnode);
     return vnode;
 }
+
 
 // === DOM Props ===
 function setProps(el, props) {
@@ -85,10 +91,19 @@ function updateProps(el, newProps, oldProps) {
 
 // === Component Context & Render ===
 function getComponentId(vnode, parentId, index) {
-    return `${parentId}/${vnode.__type.name}:${vnode.key ?? index}`;
+    let name = 'Unknown';
+
+    if (typeof vnode?.__type === 'function') {
+        name = vnode.__type.name || 'Anon';
+    } else if (typeof vnode?.__type === 'string') {
+        name = vnode.__type;
+    }
+
+    const key = vnode?.key ?? index;
+    return `${parentId}/${name}:${key}`;
 }
 
-/* Function creates contexts for each component and renders them */ 
+
 function renderComponent(vnode, parent, index, parentId = "") {
     const id = getComponentId(vnode, parentId, index);
     console.log(`Rendering component: ${id}`);
@@ -96,7 +111,6 @@ function renderComponent(vnode, parent, index, parentId = "") {
 
     const prev = currentComponent;
 
-    /* State is created once per component instance, then reused on next render */
     if (!ctx) {
         ctx = {
             hooks: [],
@@ -116,20 +130,16 @@ function renderComponent(vnode, parent, index, parentId = "") {
             ctx.effects = [];
             currentComponent = ctx;
             const outputVNode = ctx.vnode.__type(ctx.vnode.props);
+            const childId = getComponentId(ctx.vnode, parentId, ctx.index);
 
-            /* Idea is to only path the DOM from the previous renderedVNode to the new outputVNode */ 
-            patch(ctx.parent, outputVNode, ctx.renderedVNode, ctx.index, id);
+            patch(ctx.parent, outputVNode, ctx.renderedVNode, ctx.index, childId);
             ctx.renderedVNode = outputVNode;
             currentComponent = null;
-
-            /* Run all effects after the render is complete */
             ctx.effects.forEach(fn => fn());
         };
     }
 
-    /* Reset hook index and effects for each render */
     currentComponent = ctx;
-
     ctx.hookIndex = 0;
     ctx.effects = [];
     ctx.vnode = vnode;
@@ -148,7 +158,7 @@ function renderComponent(vnode, parent, index, parentId = "") {
 // === patch() ===
 function patch(parent, newVNode, oldVNode, index = 0, parentId = "") {
     const existing = parent.childNodes[index];
-    console.log(`Patching node at index ${index} in parent ${parentId}`);
+    console.log(`Patching: ${parentId} `)
 
     if (!oldVNode) {
         const vnode = resolveVNode(newVNode, parent, index, parentId);
@@ -162,18 +172,14 @@ function patch(parent, newVNode, oldVNode, index = 0, parentId = "") {
         return;
     }
 
-    /* Replace the entire node if types differ */ 
     if (typeof newVNode !== typeof oldVNode || (typeof newVNode === "string" && newVNode !== oldVNode) || newVNode.__type !== oldVNode.__type) {
         const vnode = resolveVNode(newVNode, parent, index, parentId);
         parent.replaceChild(createElement(vnode, parentId, index), existing);
         return;
     }
 
-    /* Handle functional components */
     if (typeof newVNode.__type === "function") {
         const newChild = renderComponent(newVNode, parent, index, parentId);
-
-        /* If the oldVNode is a functional component, we need to patch it */
         const oldChild = contextMap.get(getComponentId(oldVNode, parentId, index))?.vnode;
         patch(parent, newChild, oldChild, index, parentId);
         return;
@@ -182,16 +188,16 @@ function patch(parent, newVNode, oldVNode, index = 0, parentId = "") {
     updateProps(existing, newVNode.props || {}, oldVNode.props || {});
     const newChildren = newVNode.children || [];
     const oldChildren = oldVNode.children || [];
- 
-    console.log(`Patching children of ${parentId}/${newVNode.__type}:${newVNode.key ?? index}`);
-    cleanupSubtree(`${parentId}/${newVNode.__type}:${newVNode.key ?? index}`);
+
+    const currentId = getComponentId(newVNode, parentId, index);
+    cleanupSubtree(currentId);
+
     while (existing.childNodes.length > newChildren.length) {
         existing.removeChild(existing.lastChild);
     }
 
-    /* Add new children */
     for (let i = 0; i < newChildren.length; i++) {
-        patch(existing, newChildren[i], oldChildren[i], i, `${parentId}/${newVNode.__type}:${newVNode.key ?? index}`);
+        patch(existing, newChildren[i], oldChildren[i], i, currentId);
     }
 }
 
@@ -215,8 +221,8 @@ function useState(initialValue) {
 
 function cleanupSubtree(parentId) {
     for (const [id, ctx] of contextMap.entries()) {
-        
         if (id.startsWith(parentId)) {
+            console.log(`Cleaning up context for: ${id} under parent ${parentId}`);
             cleanupEffects(ctx);
             contextMap.delete(id);
         }
@@ -291,6 +297,12 @@ function renderApp(componentFn, container) {
             effects: [],
             vnode: null,
             render: null,
+            renderedVNode: null,
+            parent: container,
+            index: 0,
+            render: null,
+            hooks: [],
+            effects: []
         };
     }
     const ctx = container.__miniReactCtx;
@@ -301,7 +313,7 @@ function renderApp(componentFn, container) {
         currentComponent = ctx;
 
         /* Create initial component / node */
-        const newVNode = h(componentFn);
+        const newVNode = componentFn()
         patch(container, newVNode, ctx.vnode, 0, generateContainerId(container));
         ctx.vnode = newVNode;
         currentComponent = null;
@@ -437,6 +449,7 @@ if (typeof window !== "undefined") {
         createContext,
         RouteView,
         Fragment,
+        contextMap,
         useRouter,
         div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav
     });
