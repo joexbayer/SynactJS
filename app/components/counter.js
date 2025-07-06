@@ -7,7 +7,12 @@ export function Counter({ label = 'Counter' }) {
 
     useEffect(() => {
         console.log(`[${label}] count is now ${count}`);
+        return () => {
+            console.log(`[${label}] Cleaning up count effect`);
+        };
     }, [count]);
+
+    const doubled = useMemo(() => count * 2, [count]);
 
     return div({ class: 'card p-6 bg-white rounded shadow flex flex-col items-center gap-4' },
         h3({ class: 'text-xl font-bold' }, label),
@@ -15,6 +20,6 @@ export function Counter({ label = 'Counter' }) {
         button({
             class: 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition',
             onClick: () => setCount(count + 1)
-        }, `Click ${theme}`)
+        }, `Click ${theme} ${label} (${doubled})`),
     );
 }

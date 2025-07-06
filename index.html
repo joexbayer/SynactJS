@@ -15,6 +15,7 @@
     
     <!-- Simple Counter component example -->
     <div data-component="Counter" data-prop='{"label":"Counter A"}'></div>
+    <div data-component="Counter" data-prop='{"label":"Counter B", "key": "a"}'></div>
     <script>
         function Counter({ label = 'Counter' }) {
             const [count, setCount] = useState(0);
@@ -26,7 +27,7 @@
             return button({
                 class: 'bg-blue-600 text-white p-2',
                 onClick: () => setCount(count + 1)
-            }, `Click Me ${count}`)
+            }, `Click Me ${count} (${label})`);
         }
 
         MiniReact.register(Counter);
