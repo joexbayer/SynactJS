@@ -1,16 +1,10 @@
 # SynactJS
 
-A minimal React/Preact-inspired UI library with hooks and a virtual DOM, no build tools, runs directly in the browser. Great for small projects, experiments, and progressive enhancement.
+A minimal React/Preact-inspired UI library with functions, hooks and a virtual DOM, no classes, no build tools, no server required. Runs directly in the browser.
+
+Great for small projects, quick experiments, and progressive enhancement of static or server-rendered pages. Built entirely with functional components and inspired by how React-like libraries work under the hood.
 
 > **Warning:** SynactJS is an educational project to help understand how React-like libraries work internally. It is not intended for production use.
-
-## Overview
-
-This is a lightweight, hobby project inspired by React and heavily influenced by Preact. It offers a minimal framework for building user interfaces using a virtual DOM, functional components, and simple hooks like useState and useEffect.
-
-You can run it directly in the browser, without needing a server, bundler, or Babel. It’s ideal for small projects, experiments, or embedding interactive components into static or server-rendered pages. It also plays well with server-side rendering setups if needed.
-
-While it’s not intended for large-scale production apps, the focus is on keeping it easy to use, flexible, and open to extension. The goal is to explore modern UI features in a minimal environment — and to evolve it over time with things like custom hooks, context, routing, and more.
 
 ## Features
 
