@@ -136,7 +136,7 @@ describe('Hooks: useState', () => {
         const btn = container.querySelector('button');
         expect(btn.textContent).toBe('0');
         btn.click();
-        expect(btn.textContent).toBe('01');
+        expect(btn.textContent).toBe('1');
     });
 });
 
