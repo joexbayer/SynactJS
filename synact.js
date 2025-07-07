@@ -151,6 +151,9 @@ const SynactJSCore = (() => {
     function patch(parent, newVNode, oldVNode, index = 0, parentId = "") {
         const existing = parent.childNodes[index];
 
+        const currentId = getComponentId(newVNode, parentId, index);
+        cleanupSubtree(currentId);
+
         if (!newVNode) {
             if (existing) parent.removeChild(existing);
             return;
@@ -166,9 +169,9 @@ const SynactJSCore = (() => {
 
         /* Handle different types or mismatched element types */
         if (
-            typeof newVNode !== typeof oldVNode ||
-            (typeof newVNode === "string" || typeof newVNode === "number") && newVNode !== oldVNode ||
-            newVNode?.__type !== oldVNode?.__type
+            typeof newVNode !== typeof oldVNode || (newVNode !== oldVNode) ||
+            newVNode?.__type !== oldVNode?.__type ||
+            JSON.stringify(newVNode?.props || {}) !== JSON.stringify(oldVNode?.props || {})
         ) {
             const vnode = resolveVNode(newVNode, parent, index, parentId);
             const el = createElement(vnode, parentId, index);
@@ -191,9 +194,6 @@ const SynactJSCore = (() => {
         updateProps(existing, newVNode.props || {}, oldVNode.props || {});
         const newChildren = newVNode.children || [];
         const oldChildren = oldVNode.children || [];
-
-        const currentId = getComponentId(newVNode, parentId, index);
-        cleanupSubtree(currentId);
 
         while (existing.childNodes.length > newChildren.length) {
             existing.removeChild(existing.lastChild);

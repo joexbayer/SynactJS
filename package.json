@@ -2,9 +2,12 @@
   "type": "module",
   "scripts": {
     "test": "jest"
+    ,
+      "minify": "terser synact.js -o synact.min.js -c -m"
   },
   "devDependencies": {
     "jest": "^30.0.4",
+    "terser": "^5.20.0",
     "jest-environment-jsdom": "^30.0.4"
   },
   "jest": {

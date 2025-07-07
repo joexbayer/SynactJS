@@ -11,7 +11,6 @@ export function NavLink({ href, children, active }) {
 }
 
 export function Navbar({ current } = {}) {
-    console.log("Rendering Navbar with current:", current);
     return (
         nav({ class: "w-full bg-white shadow mb-8" },
             div({ class: "max-w-4xl mx-auto px-4 flex items-center h-16" },
