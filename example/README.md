@@ -9,7 +9,7 @@ This example also uses [rafgraph/spa-github-pages](https://github.com/rafgraph/s
 - To run locally:  
     ```sh
     bundle exec jekyll serve
-    ```
+    ``` 
 
 - To deploy on GitHub Pages:  
     Push your repository to GitHub and enable GitHub Pages in the repository settings.
