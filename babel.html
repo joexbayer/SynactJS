@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>SynactJS + JSX</title>
+    <script src="./core/synact.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+
+<body>
+    <div data-component="Counter"></div>
+    <script type="text/babel">
+        /** @jsx h */
+
+        function Counter() {
+            const [count, setCount] = useState(0);
+
+            useEffect(() => {
+                console.log(`Count is now ${count}`);
+            }, [count]);
+
+            return (
+                <div>
+                    <h1>SynactJS Counter</h1>
+                    <p>Count: {count}</p>
+                    <button onClick={() => setCount(count + 1)}>Increment</button>
+                </div>
+            );
+        }
+
+        SynactJS.register(Counter); 
+    </script>
+</body>
+
+</html>

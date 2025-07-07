@@ -1,4 +1,4 @@
-const MiniReactCore = (() => {
+const SynactJSCore = (() => {
     let currentComponent = null;
     const contextMap = new Map();
     const globalContexts = new Map();
@@ -151,28 +151,40 @@ const MiniReactCore = (() => {
     function patch(parent, newVNode, oldVNode, index = 0, parentId = "") {
         const existing = parent.childNodes[index];
 
-        if (!oldVNode) {
+        if (!newVNode) {
+            if (existing) parent.removeChild(existing);
+            return;
+        }
+
+        if (typeof newVNode?.__type === "function") {
+            const newChild = renderComponent(newVNode, parent, index, parentId);
+            const oldChildCtx = contextMap.get(getComponentId(oldVNode, parentId, index));
+            const oldChild = oldChildCtx?.renderedVNode;
+            patch(parent, newChild, oldChild, index, parentId);
+            return;
+        }
+
+        /* Handle different types or mismatched element types */
+        if (
+            typeof newVNode !== typeof oldVNode ||
+            (typeof newVNode === "string" || typeof newVNode === "number") && newVNode !== oldVNode ||
+            newVNode?.__type !== oldVNode?.__type
+        ) {
             const vnode = resolveVNode(newVNode, parent, index, parentId);
             const el = createElement(vnode, parentId, index);
-            parent.appendChild(el);
+            if (existing) {
+                parent.replaceChild(el, existing);
+            } else {
+                parent.appendChild(el);
+            }
             return;
         }
 
-        if (!newVNode) {
-            parent.removeChild(existing);
-            return;
-        }
-
-        if (typeof newVNode !== typeof oldVNode || (typeof newVNode === "string" && newVNode !== oldVNode) || newVNode.__type !== oldVNode.__type) {
-            const vnode = resolveVNode(newVNode, parent, index, parentId);
-            parent.replaceChild(createElement(vnode, parentId, index), existing);
-            return;
-        }
-
-        if (typeof newVNode.__type === "function") {
-            const newChild = renderComponent(newVNode, parent, index, parentId);
-            const oldChild = contextMap.get(getComponentId(oldVNode, parentId, index))?.vnode;
-            patch(parent, newChild, oldChild, index, parentId);
+        if ((typeof newVNode === "string" || typeof newVNode === "number") && (typeof oldVNode === "string" || typeof oldVNode === "number")) {
+            const newText = String(newVNode);
+            if (existing.textContent !== newText) {
+                existing.textContent = newText;
+            }
             return;
         }
 
@@ -187,7 +199,8 @@ const MiniReactCore = (() => {
             existing.removeChild(existing.lastChild);
         }
 
-        for (let i = 0; i < newChildren.length; i++) {
+        const maxLen = Math.max(newChildren.length, oldChildren.length);
+        for (let i = 0; i < maxLen; i++) {
             patch(existing, newChildren[i], oldChildren[i], i, currentId);
         }
     }
@@ -275,8 +288,8 @@ const MiniReactCore = (() => {
     }
 
     function renderApp(componentFn, container) {
-        if (!container.__miniReactCtx) {
-            container.__miniReactCtx = {
+        if (!container.__SynactJSCtx) {
+            container.__SynactJSCtx = {
                 hooks: [],
                 hookIndex: 0,
                 effects: [],
@@ -290,7 +303,7 @@ const MiniReactCore = (() => {
                 effects: []
             };
         }
-        const ctx = container.__miniReactCtx;
+        const ctx = container.__SynactJSCtx;
 
         ctx.render = () => {
             ctx.hookIndex = 0;
@@ -381,6 +394,31 @@ const MiniReactCore = (() => {
         return typeof prev.value === "function" ? prev.value : callback;
     }
 
+    function mountComponents() {
+        document.querySelectorAll("[data-component]").forEach(el => {
+            const name = el.getAttribute("data-component")?.trim();
+            const comp = window.SynactJS.components.find(c => c.name === name) || window[name];
+
+            /* Parse data-prop attribute as JSON */
+            let props = {};
+            const dataProp = el.getAttribute("data-prop");
+            if (dataProp) {
+                try {
+                    props = JSON.parse(dataProp);
+                } catch (e) {
+                    console.warn(`[SynactJS] Invalid JSON in data-prop for component ${name}:`, e);
+                }
+            }
+
+            if (typeof comp === "function") {
+                renderApp(
+                    () => h(comp, props),
+                    el
+                );
+            }
+        });
+    }
+
     /* Helper function to create tags, almost... JSX */
     const tag = (t) => (p, ...c) => h(t, p, ...c);
     const div = tag('div');
@@ -413,6 +451,7 @@ const MiniReactCore = (() => {
         RouteView,
         Fragment,
         contextMap,
+        mountComponents,
         useRouter,
         div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav,
         createElement,
@@ -435,26 +474,29 @@ const {
     RouteView,
     Fragment,
     useRouter,
+    contextMap,
+    mountComponents,
     div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav,
     createElement,
     setProps,
     updateProps,
     patch
-} = MiniReactCore;
+} = SynactJSCore;
 
-/* MiniReact global object to hold components */
-const MiniReact = {
+/* SynactJS global object to hold components */
+const SynactJS = {
     components: [],
-    register: function(component) {
-        console.log(`Registering component: ${component.name}`);
+    register: function (component) {
+        console.log(`[SynactJS] Registering component: ${component.name}`);
         this.components.push(component);
+        mountComponents();
     }
 };
 
 /* Auto-register components from global scope if we are in web */
-if (typeof window !== "undefined") {   
-    
-    /* Object assignt to make MiniReact available globally */
+if (typeof window !== "undefined") {
+
+    /* Object assignt to make SynactJS available globally */
     Object.assign(window, {
         h,
         useState,
@@ -474,36 +516,14 @@ if (typeof window !== "undefined") {
         updateProps,
         patch,
 
-        MiniReact
+        SynactJS
     });
-    window.miniReact = MiniReact;
-    Object.assign(window, { MiniReact})
+    window.SynactJS = SynactJS;
+    Object.assign(window, { SynactJS })
 
     /* Auto-attach components to elements with data-component attribute on DOMContentLoaded */
     document.addEventListener("DOMContentLoaded", () => {
-        document.querySelectorAll("[data-component]").forEach(el => {
-            const name = el.getAttribute("data-component")?.trim();
-            const comp = window.miniReact.components.find(c => c.name === name) || window[name];
-
-            /* Parse data-prop attribute as JSON */
-            let props = {};
-            const dataProp = el.getAttribute("data-prop");
-            if (dataProp) {
-                try {
-                    props = JSON.parse(dataProp);
-                } catch (e) {
-                    console.warn(`Invalid JSON in data-prop for component ${name}:`, e);
-                }
-            }
-
-            if (typeof comp === "function") {
-                
-                renderApp(
-                    () => h(comp, props),
-                    el
-                );
-            }
-        });
+        mountComponents();
     });
 
     /* Cleanup on beforeunload */
@@ -536,6 +556,6 @@ if (typeof module !== "undefined" && module.exports) {
         updateProps,
         patch,
 
-        MiniReact
+        SynactJS
     };
 }

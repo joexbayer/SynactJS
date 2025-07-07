@@ -19,7 +19,7 @@ export function Posts() {
             Heading({ text: 'Latest Posts' }),
             loading ? [Paragraph({ text: 'Loading...' })]
                 : posts.map(post =>
-                    div( { key: post.id },
+                    div({ key: post.id },
                         PostTitle({ text: post.title }),
                         Paragraph({ text: post.body })
                     )

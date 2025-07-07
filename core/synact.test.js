@@ -16,7 +16,7 @@ const {
     RouteView,
     useMemo,
     useCallback
-} = require('./mini-react.js');
+} = require('./synact.js');
 
 describe('Virtual DOM & h()', () => {
     it('creates a vnode for a tag', () => {
