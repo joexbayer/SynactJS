@@ -5,17 +5,24 @@
     <meta charset="UTF-8" />
     <title>SynactJS</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" type="text/css"
+        href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+    <link rel="stylesheet" type="text/css"
+        href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+
     <script type="module" src="https://cdn.jsdelivr.net/gh/joexbayer/SynactJS@refs/heads/main/synact.min.js"></script>
+    <!--
+    <script type="module" src="./synact.js"></script>
+    -->
 </head>
 
 <body>
     <!-- Full App example -->
     <div data-component="App"></div>
     <script type="module" src="./main.js"></script>
-
-    // MIT License
-    // https://github.com/rafgraph/spa-github-pages
     <script type="text/javascript">
+        // MIT License
+        // https://github.com/rafgraph/spa-github-pages
         (function (l) {
             if (l.search[1] === '/') {
                 var decoded = l.search.slice(1).split('&').map(function (s) {
@@ -26,6 +33,12 @@
                 );
             }
         }(window.location))
+
+        // Ensure router state is synced after reload
+        window.addEventListener("DOMContentLoaded", function () {
+            // Dispatch a popstate event to notify routers of the current location
+            window.dispatchEvent(new PopStateEvent("popstate"));
+        });
     </script>
 </body>
 

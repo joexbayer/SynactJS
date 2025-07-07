@@ -336,10 +336,8 @@ const SynactJSCore = (() => {
                     t.origin === location.origin) {
                     e.preventDefault();
                     const path = t.pathname;
-                    if (path !== route) {
-                        history.pushState({}, '', path);
-                        setRoute(path);
-                    }
+                    history.pushState({}, '', path);
+                    setRoute(path);
                 }
             };
             window.addEventListener("click", onClick);
@@ -438,6 +436,32 @@ const SynactJSCore = (() => {
     const label = tag('label');
     const a = tag('a');
     const nav = tag('nav');
+    const hr = tag('hr');
+    const i = tag('i');
+    const section = tag('section');
+    const pre = tag('pre');
+    const code = tag('code');
+    const img = tag('img');
+    const table = tag('table');
+    const thead = tag('thead');
+    const tbody = tag('tbody');
+    const tr = tag('tr');
+    const td = tag('td');
+    const th = tag('th');
+    const footer = tag('footer');
+    const header = tag('header');
+    const main = tag('main');
+    const textarea = tag('textarea');
+    const select = tag('select');
+    const option = tag('option');
+    const svg = tag('svg');
+    const br = tag('br');
+    const small = tag('small');
+    const ol = tag('ol');
+    const dl = tag('dl');
+    const dt = tag('dt');
+    const dd = tag('dd');
+    const fieldset = tag('fieldset');
 
     return {
         h,
@@ -453,7 +477,10 @@ const SynactJSCore = (() => {
         contextMap,
         mountComponents,
         useRouter,
-        div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav,
+        div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input,
+        form, label, a, nav, hr, i, section, pre, code, img, table, thead, tbody, tr, td, th,
+        footer, header, main, textarea, select, option, svg, br, small,
+        ol, dl, dt, dd, fieldset,
         createElement,
         setProps,
         updateProps,
