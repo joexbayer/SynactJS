@@ -19,7 +19,7 @@ Great for small projects, quick experiments, and progressive enhancement of stat
     To quickly try SynactJS, you can load it directly from a CDN in your HTML:
 
     ```html
-    <script src="TODO()"></script>
+    <script type="module" src="TODO()"></script>
     ```
 
 2. **Project Structure**  
@@ -38,7 +38,7 @@ Great for small projects, quick experiments, and progressive enhancement of stat
      <meta charset="UTF-8" />
      <title>SynactJS</title>
      <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-     <script src="TODO()"></script>
+     <script type="module" src="TODO()"></script>
 </head>
 <body>
      <!-- Mount the main App component -->
@@ -68,7 +68,7 @@ SynactJS.register(App);
      <meta charset="UTF-8" />
      <title>SynactJS</title>
      <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-     <script src="TODO()"></script>
+     <script type="module" src="TODO()"></script>
 </head>
 <body>
      <div data-component="Counter" data-prop='{"label":"Counter A"}'></div>
