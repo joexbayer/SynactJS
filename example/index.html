@@ -4,16 +4,37 @@
 <head>
     <meta charset="UTF-8" />
     <title>SynactJS</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <!-- Prism CSS for styling -->
+    <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css" rel="stylesheet" />
+
+    <!-- Prism Core and Language Support -->
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+
+    <style>
+        /* Remove Prism background colors */
+        code[class*="language-"],
+        pre[class*="language-"] {
+            background-color: transparent !important;
+            background: none !important;
+        }
+    </style>
+
+    <!-- Phosphor Icons -->
     <link rel="stylesheet" type="text/css"
         href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css" />
     <link rel="stylesheet" type="text/css"
         href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css" />
 
+
+    <!-- SynactJS Core -->
+    <!--
     <script type="module" src="https://cdn.jsdelivr.net/gh/joexbayer/SynactJS@refs/heads/main/synact.min.js"></script>
-        <!--
-    <script type="module" src="./synact.min.js"></script>
     -->
+    <script type="module" src="./synact.dev.js"></script>
 </head>
 
 <body>

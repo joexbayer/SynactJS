@@ -5,3 +5,4 @@ _site
 vendor
 synact.js
 synact.min.js
+synact.dev.js

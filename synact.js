@@ -169,9 +169,10 @@ const SynactJSCore = (() => {
 
         /* Handle different types or mismatched element types */
         if (
-            typeof newVNode !== typeof oldVNode || (newVNode !== oldVNode) ||
+            typeof newVNode !== typeof oldVNode ||
             newVNode?.__type !== oldVNode?.__type ||
-            JSON.stringify(newVNode?.props || {}) !== JSON.stringify(oldVNode?.props || {})
+            /* Ignore value prop for input elements, rerenders lose focus */
+            JSON.stringify({ ...newVNode.props, value: undefined }) !== JSON.stringify({ ...oldVNode.props, value: undefined })
         ) {
             const vnode = resolveVNode(newVNode, parent, index, parentId);
             const el = createElement(vnode, parentId, index);
@@ -195,6 +196,11 @@ const SynactJSCore = (() => {
         const newChildren = newVNode.children || [];
         const oldChildren = oldVNode.children || [];
 
+        if (!existing) {
+            console.warn(`No existing element found at index ${index} for parent ID: ${parentId}`);
+            return;
+        }
+
         while (existing.childNodes.length > newChildren.length) {
             existing.removeChild(existing.lastChild);
         }
@@ -208,13 +214,21 @@ const SynactJSCore = (() => {
     function useState(initialValue) {
         const ctx = currentComponent;
         const i = ctx.hookIndex++;
+        let scheduled = false;
 
         if (!ctx.hooks[i]) {
             ctx.hooks[i] = {
                 value: initialValue,
                 set: (newVal) => {
                     ctx.hooks[i].value = newVal;
-                    if (ctx.render) ctx.render();
+
+                    if (!scheduled) {
+                        scheduled = true;
+                        queueMicrotask(() => {
+                            scheduled = false;
+                            if (ctx.render) ctx.render();
+                        });
+                    }
                 }
             };
         }
@@ -346,7 +360,7 @@ const SynactJSCore = (() => {
                 window.removeEventListener("popstate", onPop);
                 window.removeEventListener("click", onClick);
             };
-        }, [route]);
+        }, []);
 
         const push = (path) => {
             if (path !== route) {
@@ -504,6 +518,9 @@ const {
     contextMap,
     mountComponents,
     div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav,
+    hr, i, section, pre, code, img, table, thead, tbody, tr, td, th,
+    footer, header, main, textarea, select, option, svg, br, small,
+    ol, dl, dt, dd, fieldset,
     createElement,
     setProps,
     updateProps,
@@ -537,7 +554,9 @@ if (typeof window !== "undefined") {
         Fragment,
         useRouter,
         div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav,
-
+        hr, i, section, pre, code, img, table, thead, tbody, tr, td, th,
+        footer, header, main, textarea, select, option, svg, br, small,
+        ol, dl, dt, dd, fieldset,
         createElement,
         setProps,
         updateProps,

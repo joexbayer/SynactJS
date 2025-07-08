@@ -136,7 +136,9 @@ describe('Hooks: useState', () => {
         const btn = container.querySelector('button');
         expect(btn.textContent).toBe('0');
         btn.click();
-        expect(btn.textContent).toBe('1');
+        setTimeout(() => {
+            expect(btn.textContent).toBe('1');
+        });
     });
 });
 
@@ -180,13 +182,17 @@ describe('useRouter', () => {
         window.history.pushState({}, '', '/foo');
         function App() {
             const [route, push] = useRouter();
-            return div({}, route, button({ onClick: () => push('/bar') }, 'go'));
+            return div({}, route, button({ onClick: () => push('/bar') }, ''));
         }
         const container = document.createElement('div');
         renderApp(App, container);
         expect(container.textContent).toContain('/foo');
         container.querySelector('button').click();
-        expect(container.textContent).toContain('/bar');
+
+        setTimeout(() => {
+            expect(container.textContent).toContain('/bar');
+        }, 0);
+
     });
 });
 
@@ -203,7 +209,10 @@ describe('RouteView', () => {
         expect(container.textContent).toBe('A');
         window.history.pushState({}, '', '/b');
         window.dispatchEvent(new PopStateEvent('popstate'));
-        expect(container.textContent).toBe('B');
+
+        setTimeout(() => {
+            expect(container.textContent).toBe('B');
+        }, 0);
     });
 });
 

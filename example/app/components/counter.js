@@ -1,25 +1,23 @@
-import { ThemeContext } from "../app.js";
+import { Card, Subheading, Paragraph, Button } from './ui.js';
 
-export function Counter({ label = 'Counter' }) {
+export function LiveCounterDemo() {
     const [count, setCount] = useState(0);
 
-    const theme = useContext(ThemeContext);
+    return Card({
 
-    useEffect(() => {
-        console.log(`[${label}] count is now ${count}`);
-        return () => {
-            console.log(`[${label}] Cleaning up count effect`);
-        };
-    }, [count]);
-
-    const doubled = useMemo(() => count * 2, [count]);
-
-    return div({ class: 'card p-6 bg-white rounded shadow flex flex-col items-center gap-4' },
-        h3({ class: 'text-xl font-bold' }, label),
-        p({ class: 'text-gray-700' }, `Count: ${count}`),
-        button({
-            class: 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition',
-            onClick: () => setCount(count + 1)
-        }, `Click ${theme} ${label} (${doubled})`),
-    );
+        content: [
+            Subheading({ text: '⚡ Live Counter Demo' }),
+            Paragraph({ text: `Count is currently: ${count}` }),
+            Button({
+                text: 'Increment',
+                onClick: () => setCount(count + 1),
+                className: 'mr-2'
+            }),
+            Button({
+                text: 'Reset',
+                onClick: () => setCount(0),
+                className: 'bg-slate-300 text-slate-800 hover:bg-slate-400'
+            })
+        ]
+    });
 }
