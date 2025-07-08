@@ -1,7 +1,7 @@
 import { Posts } from './components/posts.js';
 import { Navbar } from './components/navbar.js';
 
-
+import { DocsView } from './docs.js';
 import { HomeView } from './home.js';
 
 export const ThemeContext = createContext("light");
@@ -12,6 +12,12 @@ export function InnerApp() {
             div({ class: "min-h-screen bg-gray-100 flex flex-col items-center" },
                 h(Navbar, { current: "home" }),
                 h(HomeView)
+            )
+        ),
+        '/docs': () => (
+            div({ class: "min-h-screen bg-gray-100 flex flex-col items-center" },
+                h(Navbar, { current: "docs" }),
+                h(DocsView)
             )
         ),
         '*': () => (

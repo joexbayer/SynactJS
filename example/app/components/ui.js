@@ -26,9 +26,9 @@ export function Label({ text, htmlFor, className = '' }) {
 }
 
 // === Layout ===
-export function Container({ children, className = '' }) {
+export function Container({ children, className = '', style = '' }) {
     return div({
-        class: `w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 ${className}`
+        class: `w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 ${className}`, style
     }, ...(Array.isArray(children) ? children : [children]));
 }
 
@@ -42,8 +42,8 @@ export function Card({ content, className = '' }) {
     }, ...(Array.isArray(content) ? content : [content]));
 }
 
-export function Box({ children, className = '' }) {
-    return div({ class: className }, ...(Array.isArray(children) ? children : [children]));
+export function Box({ children, className = '', style = '' }) {
+    return div({ class: className, style }, ...(Array.isArray(children) ? children : [children]));
 }
 
 export function CenterBox({ children, className = '' }) {
@@ -67,8 +67,8 @@ export function Button({ text, onClick, className = '', type = 'button' }) {
     }, text);
 }
 
-export function Link({ href, text, className = '' }) {
-    return a({ href, class: `text-indigo-600 hover:underline transition ${className}` }, text);
+export function Link({ href, text, onClick, className = '' }) {
+    return a({ href, onclick: onClick, class: `text-indigo-600 hover:underline transition ${className}` }, text);
 }
 
 // === Inputs ===
