@@ -5,7 +5,6 @@ export function Todo() {
     const [text, setText] = useState('');
 
     function addTask() {
-        console.log('Adding task:', text);
         if (text.trim() === '') return;
         setTasks([...tasks, text.trim()]);
         setText('');
