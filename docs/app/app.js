@@ -8,6 +8,12 @@ export const ThemeContext = createContext("light");
 
 export function InnerApp() {
     const routes = {
+        '/': () => (
+            div({ class: "min-h-screen bg-gray-100 flex flex-col items-center" },
+                h(Navbar, { current: "home" }),
+                h(HomeView)
+            )
+        ),
         '/home': () => (
             div({ class: "min-h-screen bg-gray-100 flex flex-col items-center" },
                 h(Navbar, { current: "home" }),

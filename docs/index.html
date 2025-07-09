@@ -55,9 +55,7 @@
             }
         }(window.location))
 
-        // Ensure router state is synced after reload
         window.addEventListener("DOMContentLoaded", function () {
-            // Dispatch a popstate event to notify routers of the current location
             window.dispatchEvent(new PopStateEvent("popstate"));
         });
     </script>
