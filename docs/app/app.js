@@ -41,7 +41,7 @@ export function InnerApp() {
         ),
     };
 
-    return h(RouteView, { routes })
+    return h(RouteView, { routes, prefix: '/SynactJS' }, null);
 }
 
 export function App() {

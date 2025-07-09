@@ -1,5 +1,6 @@
 
 # Build settings
+baseurl: "/SynactJS" # required for local + GitHub Pages
 theme: minima
 plugins:
   - jekyll-feed

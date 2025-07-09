@@ -171,7 +171,6 @@ const SynactJSCore = (() => {
         if (
             typeof newVNode !== typeof oldVNode ||
             newVNode?.__type !== oldVNode?.__type ||
-            /* Ignore value prop for input elements, rerenders lose focus */
             JSON.stringify({ ...newVNode.props, value: undefined }) !== JSON.stringify({ ...oldVNode.props, value: undefined })
         ) {
             const vnode = resolveVNode(newVNode, parent, index, parentId);
@@ -197,7 +196,7 @@ const SynactJSCore = (() => {
         const oldChildren = oldVNode.children || [];
 
         if (!existing) {
-            console.warn(`No existing element found at index ${index} for parent ID: ${parentId}`);
+            onsole.warn(`No existing child node at index ${index} for parent ID ${parentId} `);
             return;
         }
 
@@ -336,21 +335,33 @@ const SynactJSCore = (() => {
     }
 
     /* Bit hacky useRouter implementation */
-    function useRouter() {
-        const [route, setRoute] = useState(window.location.pathname);
+    function useRouter(url_prefix = '') {
+
+        const [route, setRoute] = useState(() => {
+            const path = window.location.pathname;
+            return url_prefix && path.startsWith(url_prefix) ? path.slice(url_prefix.length) || "/" : path;
+        });
 
         useEffect(() => {
-            const onPop = () => setRoute(window.location.pathname);
+            const onPop = () => {
+                const path = window.location.pathname;
+                setRoute(url_prefix && path.startsWith(url_prefix) ? path.slice(url_prefix.length) || "/" : path);
+            };
+
             window.addEventListener("popstate", onPop);
 
             const onClick = (e) => {
                 const t = e.target.closest("a");
-                if (t && t.href && !e.defaultPrevented && e.button === 0 &&
-                    !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey &&
-                    t.origin === location.origin) {
+                if (t && t.href && !e.defaultPrevented && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && t.origin === location.origin) {
+                    let path = t.pathname;
+
+                    /* Handle relative paths */
+                    if (url_prefix && path.startsWith(url_prefix)) {
+                        path = path.slice(url_prefix.length) || "/";
+                    }
+
                     e.preventDefault();
-                    const path = t.pathname;
-                    history.pushState({}, '', path);
+                    history.pushState({}, '', url_prefix + path);
                     setRoute(path);
                 }
             };
@@ -360,11 +371,15 @@ const SynactJSCore = (() => {
                 window.removeEventListener("popstate", onPop);
                 window.removeEventListener("click", onClick);
             };
-        }, []);
+        }, [url_prefix]);
 
         const push = (path) => {
+            if (!path.startsWith("/")) path = "/" + path;
+            if (url_prefix && path.startsWith(url_prefix)) {
+                path = path.slice(url_prefix.length) || "/";
+            }
             if (path !== route) {
-                history.pushState({}, '', path);
+                history.pushState({}, '', url_prefix + path);
                 setRoute(path);
             }
         };
@@ -376,8 +391,8 @@ const SynactJSCore = (() => {
         return props.children;
     }
 
-    function RouteView({ routes }) {
-        const [route] = useRouter();
+    function RouteView({ routes, prefix = '' }) {
+        const [route] = useRouter(prefix);
         const match = routes[route] || routes['*'];
         return div({}, match ? match() : null);
     }
@@ -418,7 +433,7 @@ const SynactJSCore = (() => {
                 try {
                     props = JSON.parse(dataProp);
                 } catch (e) {
-                    console.warn(`[SynactJS] Invalid JSON in data-prop for component ${name}:`, e);
+                    console.warn(`[SynactJS] Invalid JSON in data - prop for component ${name}: `, e);
                 }
             }
 
@@ -517,8 +532,7 @@ const {
     useRouter,
     contextMap,
     mountComponents,
-    div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav,
-    hr, i, section, pre, code, img, table, thead, tbody, tr, td, th,
+    div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav, hr, i, section, pre, code, img, table, thead, tbody, tr, td, th,
     footer, header, main, textarea, select, option, svg, br, small,
     ol, dl, dt, dd, fieldset,
     createElement,
@@ -531,7 +545,7 @@ const {
 const SynactJS = {
     components: [],
     register: function (component) {
-        console.log(`[SynactJS] Registering component: ${component.name}`);
+        console.log(`[SynactJS] Registering component: ${component.name} `);
         this.components.push(component);
         mountComponents();
     }
@@ -557,8 +571,7 @@ if (typeof window !== "undefined") {
         hr, i, section, pre, code, img, table, thead, tbody, tr, td, th,
         footer, header, main, textarea, select, option, svg, br, small,
         ol, dl, dt, dd, fieldset,
-        createElement,
-        setProps,
+        createElement, setProps,
         updateProps,
         patch,
 

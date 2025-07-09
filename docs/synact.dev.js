@@ -336,21 +336,33 @@ const SynactJSCore = (() => {
     }
 
     /* Bit hacky useRouter implementation */
-    function useRouter() {
-        const [route, setRoute] = useState(window.location.pathname);
+    function useRouter(url_prefix = '') {
+
+        const [route, setRoute] = useState(() => {
+            const path = window.location.pathname;
+            return url_prefix && path.startsWith(url_prefix) ? path.slice(url_prefix.length) || "/" : path;
+        });
 
         useEffect(() => {
-            const onPop = () => setRoute(window.location.pathname);
+            const onPop = () => {
+                const path = window.location.pathname;
+                setRoute(url_prefix && path.startsWith(url_prefix) ? path.slice(url_prefix.length) || "/" : path);
+            };
+
             window.addEventListener("popstate", onPop);
 
             const onClick = (e) => {
                 const t = e.target.closest("a");
-                if (t && t.href && !e.defaultPrevented && e.button === 0 &&
-                    !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey &&
-                    t.origin === location.origin) {
+                if (t && t.href && !e.defaultPrevented && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && t.origin === location.origin) {
+                    let path = t.pathname;
+
+                    /* Handle relative paths */
+                    if (url_prefix && path.startsWith(url_prefix)) {
+                        path = path.slice(url_prefix.length) || "/";
+                    }
+
                     e.preventDefault();
-                    const path = t.pathname;
-                    history.pushState({}, '', path);
+                    history.pushState({}, '', url_prefix + path);
                     setRoute(path);
                 }
             };
@@ -360,11 +372,15 @@ const SynactJSCore = (() => {
                 window.removeEventListener("popstate", onPop);
                 window.removeEventListener("click", onClick);
             };
-        }, []);
+        }, [url_prefix]);
 
         const push = (path) => {
+            if (!path.startsWith("/")) path = "/" + path;
+            if (url_prefix && path.startsWith(url_prefix)) {
+                path = path.slice(url_prefix.length) || "/";
+            }
             if (path !== route) {
-                history.pushState({}, '', path);
+                history.pushState({}, '', url_prefix + path);
                 setRoute(path);
             }
         };
@@ -376,8 +392,8 @@ const SynactJSCore = (() => {
         return props.children;
     }
 
-    function RouteView({ routes }) {
-        const [route] = useRouter();
+    function RouteView({ routes, prefix = '' }) {
+        const [route] = useRouter(prefix);
         const match = routes[route] || routes['*'];
         return div({}, match ? match() : null);
     }

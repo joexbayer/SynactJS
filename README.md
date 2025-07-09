@@ -1,10 +1,14 @@
 # SynactJS
 
-A minimal React/Preact-inspired UI library with functions, hooks and a virtual DOM, no classes, no build tools, no server required. Runs directly in the browser.
+A lightweight, browser-only UI framework built as a hobby project to learn about how React works. With a focus on no classes, no build tools, no servers required. It runs directly in the browser and is perfect for small projects, quick experiments, or progressively enhancing static and server-rendered pages.
 
-Great for small projects, quick experiments, and progressive enhancement of static or server-rendered pages. Built entirely with functional components and inspired by how React-like libraries work under the hood.
+In it's current state, very similar to Preact. This framework is entirely built around functions, hooks, and a virtual DOM. Its long-term goal is to evolve with unique features specifically for the web platform, allowing use alongside serverside rendered apps such as Rails or Django.
 
 > **Warning:** SynactJS is an educational project to help understand how React-like libraries work internally. It is not intended for production use.
+
+## Documentation
+
+You can find the latest documentation and live demos on the [SynactJS Docs (GitHub Pages)](https://joexbayer.github.io/SynactJS/), which is built with SynactJS.
 
 ## CDN
 
@@ -29,7 +33,7 @@ Great for small projects, quick experiments, and progressive enhancement of stat
     ```
 
 2. **Project Structure**  
-    Example project structure:
+    Example project structure in `/docs`:
     - `app/` as the root folder, with an `app/components/` folder for individual components.
 
 ---
@@ -57,11 +61,9 @@ Great for small projects, quick experiments, and progressive enhancement of stat
 **main.js**
 ```js
 import { App } from './app.js';
-
 // Register your main App component (See example files in the app/ folder)
 SynactJS.register(App);
 ```
-
 ---
 
 ### Example 2: Direct Use of Counter Component
