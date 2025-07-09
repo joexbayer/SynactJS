@@ -1,12 +1,11 @@
-import { Posts } from './components/posts.js';
 import { Navbar } from './components/navbar.js';
 
 import { DocsView } from './docs.js';
 import { HomeView } from './home.js';
 
-export const ThemeContext = createContext("light");
+const ThemeContext = createContext("light");
 
-export function InnerApp() {
+function InnerApp() {
     const routes = {
         '/': () => (
             div({ class: "min-h-screen bg-gray-100 flex flex-col items-center" },
@@ -50,3 +49,7 @@ export function App() {
         children: h(InnerApp)
     });
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+    window.SynactJS.register(App);
+});

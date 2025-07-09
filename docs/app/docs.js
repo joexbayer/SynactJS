@@ -15,8 +15,9 @@ function Content() {
 
     function Menu() {
         const menuItems = docsSections.map(section =>
-            
-            Link({ href: `#${section.id}`, text: section.title,
+
+            Link({
+                href: `#${section.id}`, text: section.title,
                 className: `block py-2 px-4 rounded ${selectedSection == section.id ? 'bg-gray-200 font-semibold' : ''}`,
                 onClick: (e) => {
                     e.preventDefault();
@@ -26,12 +27,12 @@ function Content() {
         );
 
         return Box({
-            className: 'menu',
-            style: 'min-width: 220px; border-right: 1px solid #eee; padding: 2rem 1rem; height: 100vh; position: sticky; top: 0;',
+            className: 'menu hidden sm:block',
+            style: 'border-right: 1px solid #eee; padding: 2rem 1rem; position: sticky; top: 0; min-width: 180px;',
             children: menuItems
         });
     }
-    
+
     let content;
     switch (selectedSection) {
         case 'intro':
@@ -67,7 +68,7 @@ function Content() {
         default:
             content = [Paragraph({ text: 'Select a section.' })];
     }
- 
+
     return Container({
         style: 'display: flex; align-items: flex-start; min-height: 100vh;',
         children: [

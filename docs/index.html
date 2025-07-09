@@ -6,7 +6,6 @@
     <title>SynactJS</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-
     <!-- Prism CSS for styling -->
     <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css" rel="stylesheet" />
 
@@ -29,6 +28,7 @@
     <link rel="stylesheet" type="text/css"
         href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css" />
 
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- SynactJS Core -->
     <!--
@@ -37,28 +37,27 @@
     <script type="module" src="./synact.dev.js"></script>
 </head>
 
-<body>
-    <!-- Full App example -->
-    <div data-component="App"></div>
-    <script type="module" src="./main.js"></script>
-    <script type="text/javascript">
-        // MIT License
-        // https://github.com/rafgraph/spa-github-pages
-        (function (l) {
-            if (l.search[1] === '/') {
-                var decoded = l.search.slice(1).split('&').map(function (s) {
-                    return s.replace(/~and~/g, '&')
-                }).join('?');
-                window.history.replaceState(null, null,
-                    l.pathname.slice(0, -1) + decoded + l.hash
-                );
-            }
-        }(window.location))
+<body data-component="App">
 
-        window.addEventListener("DOMContentLoaded", function () {
-            window.dispatchEvent(new PopStateEvent("popstate"));
-        });
-    </script>
 </body>
+<script type="module" src="./main.js"></script>
+<script type="text/javascript">
+    // MIT License
+    // https://github.com/rafgraph/spa-github-pages
+    (function (l) {
+        if (l.search[1] === '/') {
+            var decoded = l.search.slice(1).split('&').map(function (s) {
+                return s.replace(/~and~/g, '&')
+            }).join('?');
+            window.history.replaceState(null, null,
+                l.pathname.slice(0, -1) + decoded + l.hash
+            );
+        }
+    }(window.location))
+
+    window.addEventListener("DOMContentLoaded", function () {
+        window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+</script>
 
 </html>

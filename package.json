@@ -1,14 +1,15 @@
 {
   "type": "module",
   "scripts": {
-    "test": "jest"
-    ,
-      "minify": "terser synact.js -o synact.min.js -c -m"
+    "test": "jest",
+    "minify": "terser synact.js -o synact.min.js -c -m",
+    "build": "esbuild docs/app/app.js --bundle --minify --format=esm --keep-names --outfile=bundled.js"
   },
   "devDependencies": {
+    "esbuild": "^0.25.6",
     "jest": "^30.0.4",
-    "terser": "^5.20.0",
-    "jest-environment-jsdom": "^30.0.4"
+    "jest-environment-jsdom": "^30.0.4",
+    "terser": "^5.20.0"
   },
   "jest": {
     "testEnvironment": "jsdom"
