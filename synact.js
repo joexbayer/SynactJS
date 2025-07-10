@@ -97,7 +97,6 @@ const SynactJSCore = (() => {
             } else if (n == null) {
                 el.removeAttribute(key);
             } else {
-                console.log(`[SynactJS] Setting prop ${key} to ${n} on element`, el);
                 el.setAttribute(key, n);
             }
         }
@@ -351,10 +350,8 @@ const SynactJSCore = (() => {
     /* Bit hacky useRouter implementation */
     function useRouter(url_prefix = '') {
 
-        const [route, setRoute] = useState(() => {
-            const path = window.location.pathname;
-            return url_prefix && path.startsWith(url_prefix) ? path.slice(url_prefix.length) || "/" : path;
-        });
+        const path = window.location.pathname;
+        const [route, setRoute] = useState(url_prefix && path.startsWith(url_prefix) ? path.slice(url_prefix.length) || "/" : path);
 
         useEffect(() => {
             const onPop = () => {

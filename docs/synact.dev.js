@@ -97,7 +97,6 @@ const SynactJSCore = (() => {
             } else if (n == null) {
                 el.removeAttribute(key);
             } else {
-                console.log(`[SynactJS] Setting prop ${key} to ${n} on element`, el);
                 el.setAttribute(key, n);
             }
         }
@@ -351,10 +350,8 @@ const SynactJSCore = (() => {
     /* Bit hacky useRouter implementation */
     function useRouter(url_prefix = '') {
 
-        const [route, setRoute] = useState(() => {
-            const path = window.location.pathname;
-            return url_prefix && path.startsWith(url_prefix) ? path.slice(url_prefix.length) || "/" : path;
-        });
+        const path = window.location.pathname;
+        const [route, setRoute] = useState(url_prefix && path.startsWith(url_prefix) ? path.slice(url_prefix.length) || "/" : path);
 
         useEffect(() => {
             const onPop = () => {
@@ -608,17 +605,17 @@ if (typeof window !== "undefined") {
     });
 
     SynactJS.define = function define(tagName, Component) {
-        if (customElements.get(tagName)) return;        // avoid re-registration
+        if (customElements.get(tagName)) return;
 
         class SynactElement extends HTMLElement {
-            static get observedAttributes() {             // reflect *all* attrs → props
-                return [];                                  // OR return ['label', 'value'] to whitelist
+            static get observedAttributes() {
+                return [];
             }
 
             constructor() {
                 super();
-                this.attachShadow({ mode: 'open' });        // encapsulated DOM
-                this._props = {};                           // current props
+                this.attachShadow({ mode: 'open' });
+                this._props = {};
             }
 
             connectedCallback() {
@@ -649,7 +646,7 @@ if (typeof window !== "undefined") {
         customElements.define(tagName, SynactElement);
     };
 
-    function tryJSON(v) {          // allow JSON literals in attributes
+    function tryJSON(v) {
         try { return JSON.parse(v); } catch { return v; }
     }
 }
