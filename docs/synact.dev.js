@@ -28,6 +28,10 @@ const SynactJSCore = (() => {
             return document.createTextNode(String(vnode));
         }
 
+        if (typeof vnode === "boolean") {
+            return document.createTextNode("");
+        }
+
         if (!vnode || typeof vnode !== "object" || !vnode.__type) {
             throw new Error("Invalid vnode: " + JSON.stringify(vnode));
         }
@@ -69,18 +73,32 @@ const SynactJSCore = (() => {
     }
 
     function updateProps(el, newProps, oldProps) {
+        if (!el || !newProps || !oldProps) return;
         const all = new Set([...Object.keys(newProps), ...Object.keys(oldProps)]);
         for (const key of all) {
             const n = newProps[key];
             const o = oldProps[key];
-            if (n !== o) {
-                if (key.startsWith("on")) {
-                    el[key.toLowerCase()] = n || null;
-                } else if (n == null) {
-                    el.removeAttribute(key);
-                } else {
-                    el.setAttribute(key, n);
-                }
+
+            if (n === o) continue;
+
+            /* Special case for 'value' and 'checked' attribute, as setAttribute does not update html?  */
+            if (key === "value") {
+                el.value = n || "";
+                continue;
+            }
+
+            if (key === "checked") {
+                el.checked = Boolean(n);
+                continue;
+            }
+
+            if (key.startsWith("on")) {
+                el[key.toLowerCase()] = n || null;
+            } else if (n == null) {
+                el.removeAttribute(key);
+            } else {
+                console.log(`[SynactJS] Setting prop ${key} to ${n} on element`, el);
+                el.setAttribute(key, n);
             }
         }
     }
@@ -177,27 +195,22 @@ const SynactJSCore = (() => {
             const el = createElement(vnode, parentId, index);
             if (existing) {
                 parent.replaceChild(el, existing);
+
             } else {
                 parent.appendChild(el);
             }
             return;
         }
 
+        updateProps(existing, newVNode?.props || {}, oldVNode?.props || {});
+        const newChildren = newVNode?.children || [];
+        const oldChildren = oldVNode?.children || [];
+
         if ((typeof newVNode === "string" || typeof newVNode === "number") && (typeof oldVNode === "string" || typeof oldVNode === "number")) {
             const newText = String(newVNode);
             if (existing.textContent !== newText) {
                 existing.textContent = newText;
             }
-            return;
-        }
-
-        updateProps(existing, newVNode.props || {}, oldVNode.props || {});
-        const newChildren = newVNode.children || [];
-        const oldChildren = oldVNode.children || [];
-
-        if (!existing) {
-            console.log(parent)
-            console.warn(`No existing child node at index ${index} for parent ID ${parentId} `);
             return;
         }
 
@@ -593,6 +606,52 @@ if (typeof window !== "undefined") {
         }
         contextMap.clear();
     });
+
+    SynactJS.define = function define(tagName, Component) {
+        if (customElements.get(tagName)) return;        // avoid re-registration
+
+        class SynactElement extends HTMLElement {
+            static get observedAttributes() {             // reflect *all* attrs → props
+                return [];                                  // OR return ['label', 'value'] to whitelist
+            }
+
+            constructor() {
+                super();
+                this.attachShadow({ mode: 'open' });        // encapsulated DOM
+                this._props = {};                           // current props
+            }
+
+            connectedCallback() {
+                this._updatePropsFromAttributes();
+                renderApp(() => h(Component, this._props), this.shadowRoot);
+            }
+
+            attributeChangedCallback(name, oldVal, newVal) {
+                if (oldVal === newVal) return;
+                this._props[name] = tryJSON(newVal);
+                renderApp(() => h(Component, this._props), this.shadowRoot);
+            }
+
+            /* public: programmatic prop updates */
+            setProps(obj) {
+                Object.assign(this._props, obj);
+                renderApp(() => h(Component, this._props), this.shadowRoot);
+            }
+
+            /* ---- helpers ---- */
+            _updatePropsFromAttributes() {
+                for (const attr of this.attributes) {
+                    this._props[attr.name] = tryJSON(attr.value);
+                }
+            }
+        }
+
+        customElements.define(tagName, SynactElement);
+    };
+
+    function tryJSON(v) {          // allow JSON literals in attributes
+        try { return JSON.parse(v); } catch { return v; }
+    }
 }
 
 /* Export for Jest testing */

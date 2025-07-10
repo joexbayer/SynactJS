@@ -7,44 +7,8 @@ const docsSections = [
     //{ id: 'examples', title: 'Examples' }
 ];
 
-
-function Content() {
-
-    const [selectedSection, setSelectedSection] = useState(docsSections[0].id);
-
-    function Menu() {
-        const menuItems = docsSections.map(section =>
-
-            Link({
-                href: `#${section.id}`, text: section.title,
-                className: `block py-2 px-4 rounded ${selectedSection == section.id ? 'bg-gray-200 font-semibold' : ''}`,
-                onClick: (e) => {
-                    e.preventDefault();
-                    setSelectedSection(section.id);
-                }
-            })
-        );
-
-        return Box({
-            className: 'menu hidden sm:block',
-            style: 'border-right: 1px solid #eee; padding: 2rem 1rem; position: sticky; top: 0; min-width: 180px;',
-            children: menuItems
-        });
-    }
-
-    let allContent = docsSections.map(section => {
-        return Section({
-            id: section.id,
-            className: `section ${selectedSection == section.id ? 'active' : ''}`,
-            children: [
-                Heading({ text: section.title }),
-                Paragraph({ text: `Content for ${section.title}.` }),
-                Divider(),
-                Paragraph({ text: `This is where you would put detailed information about ${section.title}.` })
-            ]
-        });
-    });
-    let content;
+function getDocsContent(selectedSection) {
+    let content = [];
     switch (selectedSection) {
         case 'intro':
             content = [
@@ -86,7 +50,7 @@ function Content() {
                 Box({
                     style: 'background: #f6f8fa; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-family: monospace;',
                     children: [
-                        pre({ class: 'text-sm leading-relaxed' },
+                        pre({ class: 'text-sm leading-relaxed overflow-scroll' },
                             code({ class: 'language-js' },
                                 `// main.js
 function MyComponent() {
@@ -102,7 +66,7 @@ SynactJS.register(MyComponent);`.trim())
                 Box({
                     style: 'background: #f6f8fa; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-family: monospace;',
                     children: [
-                        pre({ class: 'text-sm leading-relaxed' },
+                        pre({ class: 'text-sm leading-relaxed overflow-scroll' },
                             code({ class: 'language-js' },
                                 `// Correct usage inside another component
 function Parent() {
@@ -119,7 +83,7 @@ function Parent() {
                 Box({
                     style: 'background: #f6f8fa; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-family: monospace;',
                     children: [
-                        pre({ class: 'text-sm leading-relaxed' },
+                        pre({ class: 'text-sm leading-relaxed overflow-scroll' },
                             code({ class: 'language-html' },
                                 `<!-- index.html -->
 <div data-component="Counter" data-prop='{"label":"Counter A"}'></div>
@@ -147,7 +111,7 @@ SynactJS.register(Counter);
                 Box({
                     style: 'background: #f6f8fa; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-family: monospace;',
                     children: [
-                        pre({ class: 'text-sm leading-relaxed' },
+                        pre({ class: 'text-sm leading-relaxed overflow-scroll' },
                             code({ class: 'language-html' },
                                 `<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <div data-component="Counter"></div>
@@ -188,7 +152,7 @@ SynactJS.register(Counter);
                 Box({
                     style: 'background: #f6f8fa; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-family: monospace;',
                     children: [
-                        pre({ class: 'text-sm leading-relaxed' },
+                        pre({ class: 'text-sm leading-relaxed overflow-scroll' },
                             code({ class: 'language-js' },
                                 `// Registering a component
 function MyComponent() {
@@ -205,7 +169,7 @@ SynactJS.register(MyComponent);`.trim())
                 Box({
                     style: 'background: #f6f8fa; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-family: monospace;',
                     children: [
-                        pre({ class: 'text-sm leading-relaxed' },
+                        pre({ class: 'text-sm leading-relaxed overflow-scroll' },
                             code({ class: 'language-js' },
                                 `// Using useState for local state
 function Counter() {
@@ -223,7 +187,7 @@ SynactJS.register(Counter);`.trim())
                 Box({
                     style: 'background: #f6f8fa; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-family: monospace;',
                     children: [
-                        pre({ class: 'text-sm leading-relaxed' },
+                        pre({ class: 'text-sm leading-relaxed overflow-scroll' },
                             code({ class: 'language-js' },
                                 `// Using useEffect for side effects
 function Timer() {
@@ -245,7 +209,7 @@ SynactJS.register(Timer);`.trim())
                 Box({
                     style: 'background: #f6f8fa; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-family: monospace;',
                     children: [
-                        pre({ class: 'text-sm leading-relaxed' },
+                        pre({ class: 'text-sm leading-relaxed overflow-scroll' },
                             code({ class: 'language-js' },
                                 `// Handling events in SynactJS
 function ButtonComponent() {
@@ -265,7 +229,7 @@ SynactJS.register(ButtonComponent);`.trim())
                 Box({
                     style: 'background: #f6f8fa; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-family: monospace;',
                     children: [
-                        pre({ class: 'text-sm leading-relaxed' },
+                        pre({ class: 'text-sm leading-relaxed overflow-scroll' },
                             code({ class: 'language-html' },
                                 `<!-- index.html -->
 <div data-component="MyComponent" data-prop='{"title": "Hello World"}'></div>
@@ -289,6 +253,45 @@ SynactJS.register(MyComponent); `.trim())
         default:
             content = [Paragraph({ text: 'Select a section.' })];
     }
+    return content;
+}
+
+function Content() {
+
+    const [selectedSection, setSelectedSection] = useState(docsSections[0].id);
+
+    function Menu() {
+        const menuItems = docsSections.map(section =>
+
+            Link({
+                href: `#${section.id}`, text: section.title,
+                className: `block py-2 px-4 rounded ${selectedSection == section.id ? 'bg-gray-200 font-semibold' : ''}`,
+                onClick: (e) => {
+                    e.preventDefault();
+                    setSelectedSection(section.id);
+                }
+            })
+        );
+
+        return Box({
+            className: 'menu hidden sm:block',
+            style: 'border-right: 1px solid #eee; padding: 2rem 1rem; position: sticky; top: 0; min-width: 180px;',
+            children: menuItems
+        });
+    }
+
+    let content = getDocsContent(selectedSection);
+
+    let allContent = docsSections.map(section => {
+        return Section({
+            id: section.id,
+            className: `section ${selectedSection == section.id ? 'active' : ''}`,
+            children: [
+                ...getDocsContent(section.id),
+                Divider(),
+            ]
+        });
+    });
 
     return Container({
         style: 'display: flex; align-items: flex-start; min-height: 100vh;',

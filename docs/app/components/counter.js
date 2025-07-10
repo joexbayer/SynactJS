@@ -4,7 +4,6 @@ export function LiveCounterDemo() {
     const [count, setCount] = useState(0);
 
     return Card({
-
         content: [
             Subheading({ text: '⚡ Live Counter Demo' }),
             Paragraph({ text: `Count is currently: ${count}` }),
