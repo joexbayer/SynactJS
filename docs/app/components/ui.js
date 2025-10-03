@@ -1,3 +1,13 @@
+/**
+ * UI Components for SynactJS
+ * This file contains reusable UI components and depends on SynactJS for rendering.
+ * Also expects Phosphor icons and Tailwind CSS to be included in the project:
+ * 
+ * <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+ * <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+ * <link rel="stylesheet" type="text/css"href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+ */
+
 export function Icon({ name, weight = 'regular', size = 24, className = '' }) {
     return i({
         class: `ph ${weight === 'fill' ? 'ph-fill ' : ''} ph-${name} text-slate-600 inline-block align-middle ${className}`.trim(),

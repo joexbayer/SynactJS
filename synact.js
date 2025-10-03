@@ -97,7 +97,6 @@ const SynactJSCore = (() => {
             } else if (n == null) {
                 el.removeAttribute(key);
             } else {
-                console.log(`[SynactJS] Setting prop ${key} to ${n} on element`, el);
                 el.setAttribute(key, n);
             }
         }
@@ -249,15 +248,6 @@ const SynactJSCore = (() => {
         return [ctx.hooks[i].value, ctx.hooks[i].set];
     }
 
-    function cleanupSubtree(parentId) {
-        for (const [id, ctx] of contextMap.entries()) {
-            if (id.startsWith(parentId)) {
-                cleanupEffects(ctx);
-                contextMap.delete(id);
-            }
-        }
-    }
-
     /* Helper function for useEffect to clean up effects */
     function cleanupEffects(ctx) {
         if (ctx && Array.isArray(ctx.hooks)) {
@@ -268,6 +258,16 @@ const SynactJSCore = (() => {
             }
         }
     }
+
+    function cleanupSubtree(parentId) {
+        for (const [id, ctx] of contextMap.entries()) {
+            if (id.startsWith(parentId)) {
+                cleanupEffects(ctx);
+                contextMap.delete(id);
+            }
+        }
+    }
+
 
     function useEffect(effectFn, deps) {
         const ctx = currentComponent;
@@ -351,10 +351,8 @@ const SynactJSCore = (() => {
     /* Bit hacky useRouter implementation */
     function useRouter(url_prefix = '') {
 
-        const [route, setRoute] = useState(() => {
-            const path = window.location.pathname;
-            return url_prefix && path.startsWith(url_prefix) ? path.slice(url_prefix.length) || "/" : path;
-        });
+        const path = window.location.pathname;
+        const [route, setRoute] = useState(url_prefix && path.startsWith(url_prefix) ? path.slice(url_prefix.length) || "/" : path);
 
         useEffect(() => {
             const onPop = () => {
@@ -505,55 +503,13 @@ const SynactJSCore = (() => {
     const dt = tag('dt');
     const dd = tag('dd');
     const fieldset = tag('fieldset');
+    const article = tag('article');
 
-    return {
-        h,
-        useState,
-        useEffect,
-        useContext,
-        useMemo,
-        useCallback,
-        createContext,
-        renderApp,
-        RouteView,
-        Fragment,
-        contextMap,
-        mountComponents,
-        useRouter,
-        div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input,
-        form, label, a, nav, hr, i, section, pre, code, img, table, thead, tbody, tr, td, th,
-        footer, header, main, textarea, select, option, svg, br, small,
-        ol, dl, dt, dd, fieldset,
-        createElement,
-        setProps,
-        updateProps,
-        patch
-    };
+    return { h, useState, useEffect, useContext, useMemo, useCallback, createContext, renderApp, RouteView, Fragment, contextMap, mountComponents, useRouter, div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav, hr, i, section, pre, code, img, table, thead, tbody, tr, td, th, footer, header, main, textarea, select, option, svg, br, small, ol, dl, dt, dd, fieldset, createElement, setProps, updateProps, patch, article };
 
 })();
 
-const {
-    h,
-    useState,
-    useEffect,
-    useContext,
-    useMemo,
-    useCallback,
-    createContext,
-    renderApp,
-    RouteView,
-    Fragment,
-    useRouter,
-    contextMap,
-    mountComponents,
-    div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav, hr, i, section, pre, code, img, table, thead, tbody, tr, td, th,
-    footer, header, main, textarea, select, option, svg, br, small,
-    ol, dl, dt, dd, fieldset,
-    createElement,
-    setProps,
-    updateProps,
-    patch
-} = SynactJSCore;
+const { h, useState, useEffect, useContext, useMemo, useCallback, createContext, renderApp, RouteView, Fragment, useRouter, contextMap, mountComponents, div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav, hr, i, section, pre, code, img, table, thead, tbody, tr, td, th, footer, header, main, textarea, select, option, svg, br, small, ol, dl, dt, dd, fieldset, createElement, setProps, updateProps, patch, article } = SynactJSCore;
 
 /* SynactJS global object to hold components */
 const SynactJS = {
@@ -569,28 +525,7 @@ const SynactJS = {
 if (typeof window !== "undefined") {
 
     /* Object assignt to make SynactJS available globally */
-    Object.assign(window, {
-        h,
-        useState,
-        useEffect,
-        useContext,
-        useMemo,
-        useCallback,
-        createContext,
-        renderApp,
-        RouteView,
-        Fragment,
-        useRouter,
-        div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav,
-        hr, i, section, pre, code, img, table, thead, tbody, tr, td, th,
-        footer, header, main, textarea, select, option, svg, br, small,
-        ol, dl, dt, dd, fieldset,
-        createElement, setProps,
-        updateProps,
-        patch,
-
-        SynactJS
-    });
+    Object.assign(window, SynactJSCore, { SynactJS });
     window.SynactJS = SynactJS;
     Object.assign(window, { SynactJS })
 
@@ -602,56 +537,10 @@ if (typeof window !== "undefined") {
     /* Cleanup on beforeunload */
     window.addEventListener("beforeunload", () => {
         for (const ctx of contextMap.values()) {
-            cleanupEffects(ctx);
+            //cleanupEffects(ctx);
         }
         contextMap.clear();
     });
-
-    SynactJS.define = function define(tagName, Component) {
-        if (customElements.get(tagName)) return;
-
-        class SynactElement extends HTMLElement {
-            static get observedAttributes() {
-                return [];
-            }
-
-            constructor() {
-                super();
-                this.attachShadow({ mode: 'open' });
-                this._props = {};
-            }
-
-            connectedCallback() {
-                this._updatePropsFromAttributes();
-                renderApp(() => h(Component, this._props), this.shadowRoot);
-            }
-
-            attributeChangedCallback(name, oldVal, newVal) {
-                if (oldVal === newVal) return;
-                this._props[name] = tryJSON(newVal);
-                renderApp(() => h(Component, this._props), this.shadowRoot);
-            }
-
-            /* public: programmatic prop updates */
-            setProps(obj) {
-                Object.assign(this._props, obj);
-                renderApp(() => h(Component, this._props), this.shadowRoot);
-            }
-
-            /* ---- helpers ---- */
-            _updatePropsFromAttributes() {
-                for (const attr of this.attributes) {
-                    this._props[attr.name] = tryJSON(attr.value);
-                }
-            }
-        }
-
-        customElements.define(tagName, SynactElement);
-    };
-
-    function tryJSON(v) {
-        try { return JSON.parse(v); } catch { return v; }
-    }
 }
 
 /* Export for Jest testing */
@@ -669,7 +558,7 @@ if (typeof module !== "undefined" && module.exports) {
         Fragment,
         useRouter,
         div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav,
-
+        article,
         createElement,
         setProps,
         updateProps,
