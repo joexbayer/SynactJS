@@ -503,12 +503,13 @@ const SynactJSCore = (() => {
     const dt = tag('dt');
     const dd = tag('dd');
     const fieldset = tag('fieldset');
+    const article = tag('article');
 
-    return { h, useState, useEffect, useContext, useMemo, useCallback, createContext, renderApp, RouteView, Fragment, contextMap, mountComponents, useRouter, div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav, hr, i, section, pre, code, img, table, thead, tbody, tr, td, th, footer, header, main, textarea, select, option, svg, br, small, ol, dl, dt, dd, fieldset, createElement, setProps, updateProps, patch };
+    return { h, useState, useEffect, useContext, useMemo, useCallback, createContext, renderApp, RouteView, Fragment, contextMap, mountComponents, useRouter, div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav, hr, i, section, pre, code, img, table, thead, tbody, tr, td, th, footer, header, main, textarea, select, option, svg, br, small, ol, dl, dt, dd, fieldset, createElement, setProps, updateProps, patch, article };
 
 })();
 
-const { h, useState, useEffect, useContext, useMemo, useCallback, createContext, renderApp, RouteView, Fragment, useRouter, contextMap, mountComponents, div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav, hr, i, section, pre, code, img, table, thead, tbody, tr, td, th, footer, header, main, textarea, select, option, svg, br, small, ol, dl, dt, dd, fieldset, createElement, setProps, updateProps, patch } = SynactJSCore;
+const { h, useState, useEffect, useContext, useMemo, useCallback, createContext, renderApp, RouteView, Fragment, useRouter, contextMap, mountComponents, div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav, hr, i, section, pre, code, img, table, thead, tbody, tr, td, th, footer, header, main, textarea, select, option, svg, br, small, ol, dl, dt, dd, fieldset, createElement, setProps, updateProps, patch, article } = SynactJSCore;
 
 /* SynactJS global object to hold components */
 const SynactJS = {
@@ -557,7 +558,7 @@ if (typeof module !== "undefined" && module.exports) {
         Fragment,
         useRouter,
         div, h1, h2, h3, h4, h5, p, button, strong, span, ul, li, input, form, label, a, nav,
-
+        article,
         createElement,
         setProps,
         updateProps,
