@@ -248,15 +248,6 @@ const SynactJSCore = (() => {
         return [ctx.hooks[i].value, ctx.hooks[i].set];
     }
 
-    function cleanupSubtree(parentId) {
-        for (const [id, ctx] of contextMap.entries()) {
-            if (id.startsWith(parentId)) {
-                cleanupEffects(ctx);
-                contextMap.delete(id);
-            }
-        }
-    }
-
     /* Helper function for useEffect to clean up effects */
     function cleanupEffects(ctx) {
         if (ctx && Array.isArray(ctx.hooks)) {
@@ -267,6 +258,16 @@ const SynactJSCore = (() => {
             }
         }
     }
+
+    function cleanupSubtree(parentId) {
+        for (const [id, ctx] of contextMap.entries()) {
+            if (id.startsWith(parentId)) {
+                cleanupEffects(ctx);
+                contextMap.delete(id);
+            }
+        }
+    }
+
 
     function useEffect(effectFn, deps) {
         const ctx = currentComponent;
