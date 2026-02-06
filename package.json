@@ -2,8 +2,10 @@
   "type": "module",
   "scripts": {
     "test": "jest",
+    "build": "node scripts/build-runtime.mjs",
     "minify": "terser synact.js -o synact.min.js -c -m",
-    "build": "esbuild docs/app/app.js --bundle --minify --format=esm --keep-names --outfile=bundled.js"
+    "dist": "npm run build && npm run minify",
+    "build:docs": "esbuild docs/app/app.js --bundle --minify --format=esm --keep-names --outfile=bundled.js"
   },
   "devDependencies": {
     "esbuild": "^0.25.6",
@@ -12,6 +14,9 @@
     "terser": "^5.20.0"
   },
   "jest": {
-    "testEnvironment": "jsdom"
+    "testEnvironment": "jsdom",
+    "roots": [
+      "<rootDir>/tests"
+    ]
   }
 }
