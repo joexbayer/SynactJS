@@ -1,8 +1,9 @@
 import { runtime } from "./state.js";
+import { fail } from "./errors.js";
 
 function assertHookContext(hookName) {
     if (!runtime.currentComponent) {
-        throw new Error(`[SynactJS] ${hookName} can only be used while rendering a component.`);
+        fail("S004", `${hookName} can only be used while rendering a component.`, { hook: hookName, context: "hooks" });
     }
 }
 

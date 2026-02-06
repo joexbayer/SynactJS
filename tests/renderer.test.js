@@ -1,4 +1,4 @@
-const { h, createElement, patch } = require("../synact.js");
+const { h, createElement, patch, SynactJS } = require("../synact.js");
 const { resetDOM } = require("./helpers");
 
 describe("renderer module", () => {
@@ -28,7 +28,9 @@ describe("renderer module", () => {
             return h("div", {}, "x");
         }
 
+        SynactJS.configure({ logErrors: false });
         expect(() => createElement(h(Comp))).toThrow();
+        SynactJS.configure({ logErrors: true });
     });
 
     it("patches append, replace, and remove", () => {

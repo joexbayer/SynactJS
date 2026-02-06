@@ -13,7 +13,7 @@ You can find the latest documentation and live demos on the [SynactJS Docs (GitH
 ## CDN
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/gh/joexbayer/SynactJS@refs/heads/main/synact.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/joexbayer/SynactJS@refs/heads/main/synact.min.js"></script>
 ```
 
 ## Features
@@ -22,6 +22,9 @@ You can find the latest documentation and live demos on the [SynactJS Docs (GitH
 - `useState` and `useEffect`, `useMemo` hooks
 - JSX-like element creation with `h()` or tag shorthands
 - Simple component model
+- Browser-native helper layer for fetch, WebSocket, storage, media queries, events, timers, polling, and debouncing
+- Configurable error system with error codes
+- Optional component library (`lib/synact.lib.js`) for dashboards and admin UIs
 
 ## Usage
 
@@ -29,12 +32,158 @@ You can find the latest documentation and live demos on the [SynactJS Docs (GitH
     To quickly try SynactJS, you can load it directly from a CDN in your HTML:
 
     ```html
-    <script type="module" src="https://cdn.jsdelivr.net/gh/joexbayer/SynactJS@refs/heads/main/synact.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/joexbayer/SynactJS@refs/heads/main/synact.min.js"></script>
     ```
 
 2. **Project Structure**  
     Example project structure in `/docs`:
     - `app/` as the root folder, with an `app/components/` folder for individual components.
+
+---
+
+### Optional Component Library (`lib/`)
+
+To keep core SynactJS lightweight, prebuilt UI components are shipped as a separate optional script.
+
+```html
+<script src="https://cdn.jsdelivr.net/gh/joexbayer/SynactJS@refs/heads/main/synact.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/joexbayer/SynactJS@refs/heads/main/lib/synact.lib.min.js"></script>
+```
+
+Available globals after loading the optional library:
+- `SynactLib.AppShell`
+- `SynactLib.Grid`
+- `SynactLib.Card`
+- `SynactLib.StatCard`
+- `SynactLib.DataTable`
+- `SynactLib.SparkBars`
+- `SynactLib.Button`
+- `SynactLib.Badge`
+
+Example dashboard with minimal HTML:
+
+```html
+<div id="app"></div>
+<script>
+  function Dashboard() {
+    return SynactLib.AppShell({
+      title: "Sales Dashboard",
+      subtitle: "Live reactive widgets with simple HTML",
+      actions: [SynactLib.Button({ onClick: () => alert("Export") }, "Export")],
+      children: [
+        SynactLib.Grid({
+          children: [
+            SynactLib.StatCard({ label: "Revenue", value: "$54,220", delta: "+8.2%", tone: "positive" }),
+            SynactLib.StatCard({ label: "Churn", value: "2.1%", delta: "-0.4%", tone: "positive" }),
+            SynactLib.Card({ title: "Weekly Trend", children: SynactLib.SparkBars({ values: [8, 12, 10, 14, 13, 18, 16] }) })
+          ]
+        })
+      ]
+    });
+  }
+
+  SynactJS.render(Dashboard, "app");
+</script>
+```
+
+Full mock data example file in this repo: `dashboard.html`
+
+---
+
+### Error System
+
+SynactJS emits structured errors with codes like `S001`, `S004`, `S006`, etc.
+
+```js
+SynactJS.configure({
+  errorMode: "console", // "console" or "throw"
+  logErrors: true,
+  onError: (error, meta) => {
+    console.log("Synact error:", error.code, meta);
+  }
+});
+```
+
+Use `errorMode: "throw"` in development or tests when you want failures to stop execution immediately.
+
+---
+
+### Browser Helpers (Drop-In APIs)
+
+These helpers are available globally (e.g. `useFetch`, `createWebSocket`) and under `SynactJS.helpers`.
+
+Data and networking:
+- `createHttpClient(config)`
+- `parseResponse(response, mode?)`
+- `useFetch(input, options)`
+- `createWebSocket(url, options)`
+- `useWebSocket(url, options)`
+
+Storage and browser state:
+- `useStorageState(key, initialValue, options?)`
+- `useLocalStorage(key, initialValue)`
+- `useSessionStorage(key, initialValue)`
+- `useEventListener(target, eventName, handler)`
+- `useOnlineStatus()`
+- `useMediaQuery(query)`
+
+Time and async control:
+- `useTimeout(callback, delay)`
+- `useInterval(callback, delay)`
+- `usePolling(callback, intervalMs, options)`
+- `useDebouncedValue(value, delay)`
+- `sleep(ms)`
+
+Example:
+
+```html
+<div id="app"></div>
+<script src="./synact.js"></script>
+<script>
+  const api = createHttpClient({ baseUrl: "https://api.example.com" });
+
+  function App() {
+    const { data, loading, error, refresh } = useFetch("/stats", { client: api });
+    const socket = useWebSocket("wss://example.com/socket", { reconnect: true });
+    const online = useOnlineStatus();
+    const [theme, setTheme] = useLocalStorage("theme", "light");
+    const compact = useMediaQuery("(max-width: 768px)");
+
+    if (loading) return div({}, "Loading...");
+    if (error) return div({}, "Request failed.");
+
+    return div({},
+      button({ onClick: () => refresh() }, "Refresh"),
+      button({ onClick: () => setTheme(theme === "light" ? "dark" : "light") }, `Theme: ${theme}`),
+      p({}, `Online: ${online}`),
+      p({}, `Socket status: ${socket.status}`),
+      p({}, `Compact layout: ${compact}`),
+      pre({}, JSON.stringify(data))
+    );
+  }
+
+  SynactJS.render(App, "app");
+</script>
+```
+
+`useFetch` options (common):
+- `client`: use your own `createHttpClient(...)` instance
+- `immediate`: auto-run on mount (default `true`)
+- `deps`: additional dependencies to auto-refresh on change
+- `parse`: `"json"` (default), `"text"`, `"blob"`, `"arrayBuffer"`, `"formData"`, `"raw"` or parser function
+- `onSuccess` / `onError`: lifecycle callbacks
+
+`useWebSocket` options (common):
+- `autoConnect` (default `true`)
+- `reconnect`, `reconnectInterval`, `maxRetries`
+- `parseJSON`, `serializeJSON`
+- `onMessage`, `onStatusChange`
+
+Structured helper errors:
+- `S013`: browser API unavailable
+- `S014`: network/fetch failure
+- `S015`: WebSocket failure
+- `S016`: invalid helper usage/options
 
 ---
 
@@ -48,7 +197,7 @@ You can find the latest documentation and live demos on the [SynactJS Docs (GitH
      <meta charset="UTF-8" />
      <title>SynactJS</title>
      <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-     <script type="module" src="https://cdn.jsdelivr.net/gh/joexbayer/SynactJS@refs/heads/main/synact.min.js"></script>
+     <script src="https://cdn.jsdelivr.net/gh/joexbayer/SynactJS@refs/heads/main/synact.min.js"></script>
 </head>
 <body>
      <!-- Mount the main App component -->
@@ -76,7 +225,7 @@ SynactJS.register(App);
      <meta charset="UTF-8" />
      <title>SynactJS</title>
      <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-     <script type="module" src="https://cdn.jsdelivr.net/gh/joexbayer/SynactJS@refs/heads/main/synact.min.js"></script>
+     <script src="https://cdn.jsdelivr.net/gh/joexbayer/SynactJS@refs/heads/main/synact.min.js"></script>
 </head>
 <body>
      <div data-component="Counter" data-prop='{"label":"Counter A"}'></div>

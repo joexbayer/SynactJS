@@ -6,6 +6,7 @@ import { createElement, patch, renderApp, unmountContainer } from "./renderer.js
 import { mountComponents, resolveContainer } from "./mount.js";
 import { useRouter, RouteView, Fragment } from "./router.js";
 import { tagHelpers } from "./tags.js";
+import { browserHelpers } from "./browser.js";
 
 const SynactJSCore = {
     h,
@@ -29,7 +30,8 @@ const SynactJSCore = {
     componentRegistry: runtime.componentRegistry,
     mountedContainers: runtime.mountedContainers,
     unmountContainer,
-    ...tagHelpers
+    ...tagHelpers,
+    ...browserHelpers
 };
 
 export default SynactJSCore;

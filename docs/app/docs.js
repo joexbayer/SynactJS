@@ -1,297 +1,286 @@
-import { Container, Section, Card, Heading, Paragraph, Divider, Box, Link } from './components/ui.js';
+import { Container, Section, Heading, Paragraph, Divider, Box, Link } from './components/ui.js';
+
 const docsSections = [
     { id: 'intro', title: 'Introduction' },
     { id: 'install', title: 'Installation' },
     { id: 'usage', title: 'Usage' },
-    { id: 'api', title: 'API Reference' },
-    //{ id: 'examples', title: 'Examples' }
+    { id: 'helpers', title: 'Browser Helpers' },
+    { id: 'lib', title: 'Component Library' },
+    { id: 'errors', title: 'Error System' },
+    { id: 'api', title: 'API Reference' }
 ];
 
+function CodeBlock({ language = 'js', codeText }) {
+    return Box({
+        style: 'background: #f6f8fa; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-family: monospace;',
+        children: [
+            pre({ class: 'text-sm leading-relaxed overflow-scroll' },
+                code({ class: `language-${language}` }, codeText.trim())
+            )
+        ]
+    });
+}
+
+function BulletList(items) {
+    return ul(
+        { class: 'list-disc pl-6 text-slate-700 leading-relaxed mb-3 space-y-1' },
+        ...items.map((item) => li({}, item))
+    );
+}
+
 function getDocsContent(selectedSection) {
-    let content = [];
     switch (selectedSection) {
         case 'intro':
-            content = [
+            return [
                 Heading({ text: 'Introduction' }),
-                Paragraph({ text: 'Welcome to the SynactJS documentation. Here you will find everything you need to get started.' })
+                Paragraph({ text: 'SynactJS is a drop-in, browser-first UI framework. Include one script, write JavaScript components, and render into a single HTML mount node.' }),
+                Paragraph({ text: 'The core runtime gives you virtual DOM + hooks. Optional layers add prebuilt UI components (`SynactLib`) and browser-native helper abstractions for data, sockets, storage, and events.' }),
+                BulletList([
+                    'No build step required for basic usage',
+                    'Hooks + component model similar to React',
+                    'Works with static HTML and server-rendered pages',
+                    'Optional extras: SynactLib + browser helper APIs'
+                ])
             ];
-            break;
+
         case 'install':
-            content = [
+            return [
                 Heading({ text: 'Installation' }),
-                Paragraph({ text: 'Install SynactJS easily without any server or build tools. Just include it directly in your HTML using a CDN:' }),
-                Box({
-                    style: 'background: #f6f8fa; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-family: monospace;',
-                    children: [
-                        '<script type="module" src="https://cdn.jsdelivr.net/gh/joexbayer/SynactJS@refs/heads/main/synact.min.js"></script>'
-                    ]
+                Paragraph({ text: 'For the drop-in experience, use classic script tags:' }),
+                CodeBlock({
+                    language: 'html',
+                    codeText: `<!-- Core runtime -->
+<script src="https://cdn.jsdelivr.net/gh/joexbayer/SynactJS@refs/heads/main/synact.min.js"></script>
+
+<!-- Optional prebuilt UI components -->
+<script src="https://cdn.jsdelivr.net/gh/joexbayer/SynactJS@refs/heads/main/lib/synact.lib.min.js"></script>`
                 }),
-                Paragraph({ text: 'That’s it! No npm install, no bundlers, no configuration required.' })
+                Paragraph({ text: 'The optional library is separate so the core runtime stays small.' }),
+                Paragraph({ text: 'For local project files, you can also use:' }),
+                CodeBlock({
+                    language: 'html',
+                    codeText: `<script src="./synact.js"></script>
+<script src="./lib/synact.lib.js"></script>`
+                })
             ];
-            break;
+
         case 'usage':
-            content = [
+            return [
                 Heading({ text: 'Usage' }),
-                Paragraph({ text: 'SynactJS is a lightweight, browser-only UI framework inspired by React. It is ideal for small projects, quick experiments, or enhancing static/server-rendered pages.' }),
-                Heading({ text: 'Mounting Components with data-component', level: 2 }),
-                Paragraph({ text: 'To mount a component, simply add an element in your HTML with a data-component attribute set to your component’s name. SynactJS will automatically find these elements and render the corresponding component inside them.' }),
-                Box({
-                    style: 'background: #f6f8fa; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-family: monospace;',
-                    children: [
-                        pre({ class: 'text-sm leading-relaxed' },
-                            code({ class: 'language-html' },
-                                `<!-- index.html -->
-<div data-component="MyComponent"></div>
-`.trim())
-                        )
-                    ]
-                }),
-                Paragraph({ text: 'In your JavaScript, define and register the component. SynactJS will mount it to every matching data-component element:' }),
-                Box({
-                    style: 'background: #f6f8fa; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-family: monospace;',
-                    children: [
-                        pre({ class: 'text-sm leading-relaxed overflow-scroll' },
-                            code({ class: 'language-js' },
-                                `// main.js
-function MyComponent() {
-    return h('div', null, 'Hello from MyComponent!');
-}
-SynactJS.register(MyComponent);`.trim())
-                        )
-                    ]
-                }),
-                Paragraph({ text: 'You can also pass props to your component using the data-prop attribute as a JSON string.' }),
-
-                Paragraph({ text: 'Important: When using a functional component (especially one that uses state or useEffect), you must wrap it with h(Component, props) when rendering it inside another component. For example:' }),
-                Box({
-                    style: 'background: #f6f8fa; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-family: monospace;',
-                    children: [
-                        pre({ class: 'text-sm leading-relaxed overflow-scroll' },
-                            code({ class: 'language-js' },
-                                `// Correct usage inside another component
-function Parent() {
-    return h(ChildComponent, { someProp: 123 });
-}`.trim())
-                        )
-                    ]
-                }),
-                Paragraph({
-                    text: 'This ensures the component lifecycle (state, effects, etc.) works as expected.'
-                }),
-
-                Heading({ text: 'Example: Counter Component', level: 2 }),
-                Box({
-                    style: 'background: #f6f8fa; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-family: monospace;',
-                    children: [
-                        pre({ class: 'text-sm leading-relaxed overflow-scroll' },
-                            code({ class: 'language-html' },
-                                `<!-- index.html -->
-<div data-component="Counter" data-prop='{"label":"Counter A"}'></div>
-<script>
-function Counter({ label = 'Counter' }) {
-    const [count, setCount] = useState(0);
-
-    useEffect(() => {
-        console.log(\`[\${label}] count is now \${count}\`);
-    }, [count]);
-
-    return button({
-        class: 'bg-blue-600 text-white p-2',
-        onClick: () => setCount(count + 1)
-    }, \`Click Me \${count} (\${label})\`);
-}
-
-SynactJS.register(Counter);
-</script>`.trim())
-                        )
-                    ]
-                }),
-                Heading({ text: 'JSX & Babel Usage', level: 2 }),
-                Paragraph({ text: 'You can use SynactJS with Babel and JSX for a React-like experience. Remember to add /** @jsx h */ at the top of your file.' }),
-                Box({
-                    style: 'background: #f6f8fa; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-family: monospace;',
-                    children: [
-                        pre({ class: 'text-sm leading-relaxed overflow-scroll' },
-                            code({ class: 'language-html' },
-                                `<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<div data-component="Counter"></div>
-<script type="text/babel">
-    /** @jsx h */
-
-    function Counter() {
+                Paragraph({ text: 'Minimal HTML + JavaScript app:' }),
+                CodeBlock({
+                    language: 'html',
+                    codeText: `<!DOCTYPE html>
+<html>
+  <body>
+    <div id="app"></div>
+    <script src="./synact.js"></script>
+    <script>
+      function Counter() {
         const [count, setCount] = useState(0);
+        return button({ onClick: () => setCount(count + 1) }, \`Count: \${count}\`);
+      }
 
-        useEffect(() => {
-            console.log(\`Count is now \${count}\`);
-        }, [count]);
-
-        return (
-            <div>
-                <h1>SynactJS Counter</h1>
-                <p>Count: {count}</p>
-                <button onClick={() => setCount(count + 1)}>Increment</button>
-            </div>
-        );
-    }
-
-    SynactJS.register(Counter); 
-</script>`.trim())
-                        )
-                    ]
+      SynactJS.render(Counter, 'app');
+    </script>
+  </body>
+</html>`
                 }),
-                Paragraph({ text: 'Note: Always include /** @jsx h */ when using JSX with SynactJS.' })
-            ];
-            break;
-        case 'api':
-            content = [
-                Heading({ text: 'API Reference' }),
-                Paragraph({ text: 'Detailed API documentation.' }),
-
-                Heading({ text: 'Component Registration', level: 2 }),
-                Paragraph({ text: 'Register components using SynactJS.register(ComponentName) to make them available for mounting.' }),
-                Box({
-                    style: 'background: #f6f8fa; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-family: monospace;',
-                    children: [
-                        pre({ class: 'text-sm leading-relaxed overflow-scroll' },
-                            code({ class: 'language-js' },
-                                `// Registering a component
-function MyComponent() {
-    return h('div', null, 'Hello from MyComponent!');
-}
-SynactJS.register(MyComponent);`.trim())
-                        )
-                    ]
-                }),
-                Paragraph({ text: 'Components can be functional or class-based, but functional components are preferred for simplicity and performance.' }),
-
-                Heading({ text: 'State Management', level: 2 }),
-                Paragraph({ text: 'Use useState to manage local component state. SynactJS will automatically re-render components when state changes.' }),
-                Box({
-                    style: 'background: #f6f8fa; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-family: monospace;',
-                    children: [
-                        pre({ class: 'text-sm leading-relaxed overflow-scroll' },
-                            code({ class: 'language-js' },
-                                `// Using useState for local state
-function Counter() {
-    const [count, setCount] = useState(0);
-    return h('button', { onClick: () => setCount(count + 1) }, \`Count: \${count}\`);
-}
-SynactJS.register(Counter);`.trim())
-                        )
-                    ]
-                }),
-                Paragraph({ text: 'State updates are batched and asynchronous, similar to React.' }),
-
-                Heading({ text: 'Effects', level: 2 }),
-                Paragraph({ text: 'Use useEffect to run side effects in your components. SynactJS will handle cleanup automatically.' }),
-                Box({
-                    style: 'background: #f6f8fa; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-family: monospace;',
-                    children: [
-                        pre({ class: 'text-sm leading-relaxed overflow-scroll' },
-                            code({ class: 'language-js' },
-                                `// Using useEffect for side effects
-function Timer() {
-    const [time, setTime] = useState(Date.now());
-    useEffect(() => {
-        const interval = setInterval(() => setTime(Date.now()), 1000);
-        return () => clearInterval(interval); // Cleanup on unmount
-    }, []);
-    return h('div', null, \`Current time: \${new Date(time).toLocaleTimeString()}\`);
-}
-SynactJS.register(Timer);`.trim())
-                        )
-                    ]
-                }),
-                Paragraph({ text: 'Effects can depend on state or props, and will re-run when those change.' }),
-
-                Heading({ text: 'Event Handling', level: 2 }),
-                Paragraph({ text: 'Attach event handlers directly to elements using the onClick, onChange, etc. attributes.' }),
-                Box({
-                    style: 'background: #f6f8fa; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-family: monospace;',
-                    children: [
-                        pre({ class: 'text-sm leading-relaxed overflow-scroll' },
-                            code({ class: 'language-js' },
-                                `// Handling events in SynactJS
-function ButtonComponent() {
-    return h('button', {
-        onClick: () => alert('Button clicked!'),
-        class: 'bg-blue-500 text-white p-2 rounded'
-    }, 'Click Me');
-}
-SynactJS.register(ButtonComponent);`.trim())
-                        )
-                    ]
-                }),
-                Paragraph({ text: 'Event handlers can be defined inline or as separate functions.' }),
-
-                Heading({ text: 'Props', level: 2 }),
-                Paragraph({ text: 'Pass props to components using the data-prop attribute in your HTML.' }),
-                Box({
-                    style: 'background: #f6f8fa; padding: 1rem; border-radius: 6px; margin: 1rem 0; font-family: monospace;',
-                    children: [
-                        pre({ class: 'text-sm leading-relaxed overflow-scroll' },
-                            code({ class: 'language-html' },
-                                `<!-- index.html -->
-<div data-component="MyComponent" data-prop='{"title": "Hello World"}'></div>
+                Paragraph({ text: 'Progressive enhancement with `data-component` also works:' }),
+                CodeBlock({
+                    language: 'html',
+                    codeText: `<div data-component="Greeting" data-prop='{"name":"Synact"}'></div>
+<script src="./synact.js"></script>
 <script>
-function MyComponent({ title }) {
-    return h('h1', null, title);
-}
-SynactJS.register(MyComponent); `.trim())
-                        )
-                    ]
+  function Greeting({ name }) {
+    return div({}, \`Hello \${name}\`);
+  }
+
+  SynactJS.register(Greeting);
+</script>`
+                })
+            ];
+
+        case 'helpers':
+            return [
+                Heading({ text: 'Browser Helpers' }),
+                Paragraph({ text: 'SynactJS now ships browser-native helper APIs integrated with hooks and cleanup behavior. They are available globally and at `SynactJS.helpers`.' }),
+                BulletList([
+                    'Data: createHttpClient, parseResponse, useFetch',
+                    'Realtime: createWebSocket, useWebSocket',
+                    'Storage: useStorageState, useLocalStorage, useSessionStorage',
+                    'Environment: useEventListener, useOnlineStatus, useMediaQuery',
+                    'Timing: useTimeout, useInterval, usePolling, useDebouncedValue, sleep'
+                ]),
+                Heading({ text: 'Fetch Example', level: 2 }),
+                CodeBlock({
+                    language: 'js',
+                    codeText: `const api = createHttpClient({ baseUrl: 'https://api.example.com' });
+
+function Metrics() {
+  const { data, loading, error, refresh } = useFetch('/stats', { client: api });
+
+  if (loading) return div({}, 'Loading...');
+  if (error) return div({}, 'Request failed');
+
+  return div({}
+    ,button({ onClick: () => refresh() }, 'Refresh')
+    ,pre({}, JSON.stringify(data, null, 2))
+  );
+}`
                 }),
-                Paragraph({ text: 'Props can be any JSON-serializable value, including objects and arrays.' }),
+                Heading({ text: 'WebSocket Example', level: 2 }),
+                CodeBlock({
+                    language: 'js',
+                    codeText: `function LiveFeed() {
+  const { status, lastMessage, send } = useWebSocket('wss://example.com/socket', {
+    reconnect: true,
+    reconnectInterval: 1500
+  });
+
+  return div({}
+    ,p({}, \`Socket: \${status}\`)
+    ,button({ onClick: () => send({ type: 'ping' }) }, 'Ping')
+    ,pre({}, JSON.stringify(lastMessage, null, 2))
+  );
+}`
+                }),
+                Heading({ text: 'Storage + Polling Example', level: 2 }),
+                CodeBlock({
+                    language: 'js',
+                    codeText: `function DashboardSettings() {
+  const [theme, setTheme] = useLocalStorage('theme', 'light');
+  const online = useOnlineStatus();
+
+  usePolling(() => {
+    console.log('poll tick');
+  }, 10000, { enabled: online, immediate: false });
+
+  return button({ onClick: () => setTheme(theme === 'light' ? 'dark' : 'light') }, theme);
+}`
+                })
             ];
-            break;
-        case 'examples':
-            content = [
-                Heading({ text: 'Examples' }),
-                Paragraph({ text: 'Explore practical examples.' })
+
+        case 'lib':
+            return [
+                Heading({ text: 'Component Library (`lib/`)' }),
+                Paragraph({ text: 'SynactLib is an optional add-on for dashboards/admin UIs. Keep it separate to avoid bloating the base runtime for users who only need core hooks + rendering.' }),
+                BulletList([
+                    'AppShell, Grid, Card, StatCard',
+                    'DataTable, SparkBars',
+                    'Button, Badge, Toolbar'
+                ]),
+                CodeBlock({
+                    language: 'html',
+                    codeText: `<div id="app"></div>
+<script src="./synact.js"></script>
+<script src="./lib/synact.lib.js"></script>
+<script>
+  function Dashboard() {
+    return SynactLib.AppShell({
+      title: 'Operations',
+      children: [
+        SynactLib.Grid({ children: [
+          SynactLib.StatCard({ label: 'Revenue', value: '$54,220', delta: '+8.2%', tone: 'positive' }),
+          SynactLib.Card({ title: 'Trend', children: SynactLib.SparkBars({ values: [8,12,10,14,18] }) })
+        ] })
+      ]
+    });
+  }
+
+  SynactJS.render(Dashboard, 'app');
+</script>`
+                }),
+                Paragraph({ text: 'A full mock dashboard example is included at `/dashboard.html` in the repository root.' })
             ];
-            break;
+
+        case 'errors':
+            return [
+                Heading({ text: 'Error System' }),
+                Paragraph({ text: 'SynactJS emits structured errors with codes (e.g. `S001`, `S007`, `S014`) for predictable diagnostics and easier troubleshooting.' }),
+                CodeBlock({
+                    language: 'js',
+                    codeText: `SynactJS.configure({
+  errorMode: 'console', // or 'throw'
+  logErrors: true,
+  onError: (error, meta) => {
+    console.log(error.code, meta.context, error.details);
+  }
+});`
+                }),
+                Paragraph({ text: 'Common helper-related codes:' }),
+                BulletList([
+                    'S013: browser API unavailable in current environment',
+                    'S014: network/fetch failure',
+                    'S015: WebSocket operation failure',
+                    'S016: invalid helper usage or bad helper options'
+                ])
+            ];
+
+        case 'api':
+            return [
+                Heading({ text: 'API Reference' }),
+                Heading({ text: 'Core Runtime', level: 2 }),
+                BulletList([
+                    'SynactJS.register(component)',
+                    'SynactJS.render(componentOrVNode, containerOrSelector, props?)',
+                    'SynactJS.mount(...) / SynactJS.unmount(...)',
+                    'SynactJS.configure(config) / SynactJS.getConfig()'
+                ]),
+                Heading({ text: 'Core Hooks', level: 2 }),
+                BulletList([
+                    'useState, useEffect, useMemo, useCallback',
+                    'createContext, useContext',
+                    'useRouter, RouteView, Fragment'
+                ]),
+                Heading({ text: 'Tag Helpers', level: 2 }),
+                Paragraph({ text: 'HTML helper functions are globally available (`div`, `button`, `input`, `table`, etc.) and map to virtual DOM element creation.' }),
+                Heading({ text: 'Helper Namespace', level: 2 }),
+                Paragraph({ text: 'All browser helper APIs are also grouped at `SynactJS.helpers` for discoverability and editor autocomplete.' }),
+                Paragraph({ text: 'See the project README for complete up-to-date examples and code snippets.' }),
+                Link({ href: 'https://github.com/joexbayer/SynactJS/tree/main', text: 'Open repository', className: 'font-medium' })
+            ];
+
         default:
-            content = [Paragraph({ text: 'Select a section.' })];
+            return [Paragraph({ text: 'Select a section.' })];
     }
-    return content;
 }
 
 function Content() {
-
     const [selectedSection, setSelectedSection] = useState(docsSections[0].id);
 
     function Menu() {
-        const menuItems = docsSections.map(section =>
-
+        const menuItems = docsSections.map((section) => (
             Link({
-                href: `#${section.id}`, text: section.title,
-                className: `block py-2 px-4 rounded ${selectedSection == section.id ? 'bg-gray-200 font-semibold' : ''}`,
-                onClick: (e) => {
-                    e.preventDefault();
+                href: `#${section.id}`,
+                text: section.title,
+                className: `block py-2 px-4 rounded ${selectedSection === section.id ? 'bg-gray-200 font-semibold' : ''}`,
+                onClick: (event) => {
+                    event.preventDefault();
                     setSelectedSection(section.id);
                 }
             })
-        );
+        ));
 
         return Box({
             className: 'menu hidden sm:block',
-            style: 'border-right: 1px solid #eee; padding: 2rem 1rem; position: sticky; top: 0; min-width: 180px;',
+            style: 'border-right: 1px solid #eee; padding: 2rem 1rem; position: sticky; top: 0; min-width: 220px;',
             children: menuItems
         });
     }
 
-    let content = getDocsContent(selectedSection);
+    const content = getDocsContent(selectedSection);
 
-    let allContent = docsSections.map(section => {
-        return Section({
+    const allContent = docsSections.map((section) => (
+        Section({
             id: section.id,
-            className: `section ${selectedSection == section.id ? 'active' : ''}`,
+            className: `section ${selectedSection === section.id ? 'active' : ''}`,
             children: [
                 ...getDocsContent(section.id),
-                Divider(),
+                Divider()
             ]
-        });
-    });
+        })
+    ));
 
     return Container({
         style: 'display: flex; align-items: flex-start; min-height: 100vh;',
@@ -304,5 +293,5 @@ function Content() {
 }
 
 export function DocsView() {
-    return h(Content)
+    return h(Content);
 }

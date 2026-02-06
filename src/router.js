@@ -1,5 +1,6 @@
 import { useState, useEffect } from "./hooks.js";
 import { h } from "./vnode.js";
+import { report } from "./errors.js";
 
 export function useRouter(urlPrefix = "") {
     const getPath = () => {
@@ -14,7 +15,11 @@ export function useRouter(urlPrefix = "") {
 
     useEffect(() => {
         const onPopState = () => {
-            setRoute(getPath());
+            try {
+                setRoute(getPath());
+            } catch (error) {
+                report("S010", error, { context: "router.popstate", urlPrefix });
+            }
         };
 
         const onClick = (event) => {
@@ -31,8 +36,12 @@ export function useRouter(urlPrefix = "") {
             }
 
             event.preventDefault();
-            history.pushState({}, "", urlPrefix + nextPath);
-            setRoute(nextPath);
+            try {
+                history.pushState({}, "", urlPrefix + nextPath);
+                setRoute(nextPath);
+            } catch (error) {
+                report("S010", error, { context: "router.click", nextPath, urlPrefix });
+            }
         };
 
         window.addEventListener("popstate", onPopState);
@@ -56,8 +65,12 @@ export function useRouter(urlPrefix = "") {
 
         if (nextPath === route) return;
 
-        history.pushState({}, "", urlPrefix + nextPath);
-        setRoute(nextPath);
+        try {
+            history.pushState({}, "", urlPrefix + nextPath);
+            setRoute(nextPath);
+        } catch (error) {
+            report("S010", error, { context: "router.push", nextPath, urlPrefix });
+        }
     };
 
     return [route, push];

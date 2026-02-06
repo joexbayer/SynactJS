@@ -9,6 +9,26 @@ import {
     getProviderChild
 } from "./vnode.js";
 import { setProps, updateProps } from "./props.js";
+import { fail, report } from "./errors.js";
+
+function getComponentDisplayName(vnode) {
+    if (typeof vnode?.__type === "function") {
+        return vnode.__type.name || "AnonymousComponent";
+    }
+    return "UnknownComponent";
+}
+
+function createErrorVNode(error, label) {
+    return {
+        __type: "pre",
+        props: {
+            className: "synact-error",
+            style: "padding:10px;border:1px solid #f5c2c7;background:#fff5f6;color:#842029;white-space:pre-wrap;"
+        },
+        children: [`${label}\\n${error.message}`],
+        key: null
+    };
+}
 
 function cleanupEffects(ctx) {
     if (!ctx || !Array.isArray(ctx.hooks)) {
@@ -92,7 +112,7 @@ function resolveVNodeForCreate(vnode, parent, index, parentId = "") {
             continue;
         }
 
-        throw new Error(`Invalid vnode: ${JSON.stringify(currentVNode)}`);
+        fail("S005", `Invalid vnode: ${JSON.stringify(currentVNode)}`, { context: "renderer.create", parentId, index });
     }
 }
 
@@ -105,7 +125,11 @@ function scheduleEffects(ctx) {
     ctx.effects = [];
 
     for (const effectRunner of toRun) {
-        effectRunner();
+        try {
+            effectRunner();
+        } catch (error) {
+            report("S008", error, { context: "effects" });
+        }
     }
 }
 
@@ -137,7 +161,16 @@ function renderComponent(vnode, parent, index, parentId = "") {
             ctx.effects = [];
             runtime.currentComponent = ctx;
 
-            const outputVNode = ctx.vnode.__type(ctx.vnode.props || {});
+            let outputVNode;
+            try {
+                outputVNode = ctx.vnode.__type(ctx.vnode.props || {});
+            } catch (error) {
+                const renderedError = report("S007", error, {
+                    component: getComponentDisplayName(ctx.vnode),
+                    context: "component.render"
+                });
+                outputVNode = createErrorVNode(renderedError, `[SynactJS:${renderedError.code}] Render Error`);
+            }
             runtime.currentComponent = prevComponent;
 
             const childParentId = getComponentId(ctx.vnode, ctx.parentId, ctx.index);
@@ -157,7 +190,16 @@ function renderComponent(vnode, parent, index, parentId = "") {
 
     const prevComponent = runtime.currentComponent;
     runtime.currentComponent = ctx;
-    const output = vnode.__type(vnode.props || {});
+    let output;
+    try {
+        output = vnode.__type(vnode.props || {});
+    } catch (error) {
+        const renderedError = report("S007", error, {
+            component: getComponentDisplayName(vnode),
+            context: "component.initialRender"
+        });
+        output = createErrorVNode(renderedError, `[SynactJS:${renderedError.code}] Render Error`);
+    }
     runtime.currentComponent = prevComponent;
 
     ctx.renderedVNode = output;
@@ -168,7 +210,7 @@ function renderComponent(vnode, parent, index, parentId = "") {
 
 export function createElement(vnode, parentId = "", index = 0, parent = null) {
     if (parent === null && isFunctionVNode(vnode)) {
-        throw new Error("createElement should not be called with functional components.");
+        fail("S005", "createElement should not be called with functional components.", { context: "renderer.createRoot", parentId, index });
     }
 
     const resolvedVNode = resolveVNodeForCreate(vnode, parent, index, parentId);
@@ -186,7 +228,7 @@ export function createElement(vnode, parentId = "", index = 0, parent = null) {
     }
 
     if (!isElementVNode(vnode)) {
-        throw new Error(`Invalid vnode: ${JSON.stringify(vnode)}`);
+        fail("S005", `Invalid vnode: ${JSON.stringify(vnode)}`, { context: "renderer.createElement", parentId, index });
     }
 
     const el = document.createElement(vnode.__type);
@@ -284,7 +326,7 @@ export function patch(parent, newVNode, oldVNode, index = 0, parentId = "") {
     }
 
     if (!isElementVNode(newVNode)) {
-        throw new Error(`Invalid vnode in patch(): ${JSON.stringify(newVNode)}`);
+        fail("S005", `Invalid vnode in patch(): ${JSON.stringify(newVNode)}`, { context: "renderer.patch", parentId, index });
     }
 
     const shouldReplace = !existing || !isElementVNode(oldVNode) || oldVNode.__type !== newVNode.__type;
@@ -326,7 +368,11 @@ export function unmountContainer(container) {
         return;
     }
 
-    patch(container, null, ctx.vnode, 0, generateContainerId(container));
+    try {
+        patch(container, null, ctx.vnode, 0, generateContainerId(container));
+    } catch (error) {
+        report("S009", error, { context: "renderer.unmount" });
+    }
     cleanupEffects(ctx);
     delete container.__SynactJSCtx;
     runtime.mountedSignatures.delete(container);
@@ -362,8 +408,15 @@ export function renderApp(componentFn, container) {
         ctx.effects = [];
         runtime.currentComponent = ctx;
 
-        const newVNode = ctx.componentFn();
-        patch(container, newVNode, ctx.vnode, 0, generateContainerId(container));
+        let newVNode;
+        try {
+            newVNode = ctx.componentFn();
+            patch(container, newVNode, ctx.vnode, 0, generateContainerId(container));
+        } catch (error) {
+            const runtimeError = report("S009", error, { context: "renderer.renderApp" });
+            newVNode = createErrorVNode(runtimeError, `[SynactJS:${runtimeError.code}] Runtime Error`);
+            patch(container, newVNode, ctx.vnode, 0, generateContainerId(container));
+        }
 
         ctx.vnode = newVNode;
         runtime.currentComponent = previousComponent;

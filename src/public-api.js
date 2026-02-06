@@ -1,15 +1,19 @@
 import SynactJSCore from "./core.js";
 import { runtime, cleanupHookCollection } from "./state.js";
+import { configureRuntime, getRuntimeConfig, fail } from "./errors.js";
+import { browserHelpers } from "./browser.js";
 
 export const SynactJS = {
     register(component) {
         if (typeof component !== "function") {
-            throw new Error("[SynactJS] register() expects a component function.");
+            fail("S002", "register() expects a component function.", { context: "public-api.register" });
         }
 
         const componentName = component.name;
         if (!componentName) {
-            throw new Error("[SynactJS] register() requires a named function component so data-component can resolve it.");
+            fail("S003", "register() requires a named function component so data-component can resolve it.", {
+                context: "public-api.register"
+            });
         }
 
         runtime.componentRegistry.set(componentName, component);
@@ -37,6 +41,15 @@ export const SynactJS = {
         SynactJSCore.unmountContainer(container);
     },
 
+    configure(config = {}) {
+        return configureRuntime(config);
+    },
+
+    getConfig() {
+        return getRuntimeConfig();
+    },
+
+    helpers: browserHelpers,
     components: []
 };
 

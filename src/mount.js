@@ -1,6 +1,7 @@
 import { runtime } from "./state.js";
 import { h } from "./vnode.js";
 import { renderApp } from "./renderer.js";
+import { fail, report } from "./errors.js";
 
 export function resolveContainer(target) {
     if (typeof target === "string") {
@@ -11,14 +12,14 @@ export function resolveContainer(target) {
         const bySelector = document.querySelector(target);
         if (bySelector) return bySelector;
 
-        throw new Error(`[SynactJS] Unable to find container for selector \"${target}\".`);
+        fail("S001", `Unable to find container for selector \"${target}\".`, { selector: target, context: "mount" });
     }
 
     if (target && typeof target === "object" && target.nodeType === 1) {
         return target;
     }
 
-    throw new Error("[SynactJS] Expected a DOM element or selector string for container.");
+    fail("S001", "Expected a DOM element or selector string for container.", { targetType: typeof target, context: "mount" });
 }
 
 export function mountComponents(root = document) {
@@ -42,7 +43,7 @@ export function mountComponents(root = document) {
             try {
                 props = JSON.parse(rawProps);
             } catch (error) {
-                console.warn(`[SynactJS] Invalid JSON in data-prop for component ${name}:`, error);
+                report("S006", error, { component: name, rawProps, context: "mount" });
             }
         }
 

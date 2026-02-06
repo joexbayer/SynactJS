@@ -3,8 +3,10 @@
   "scripts": {
     "test": "jest",
     "build": "node scripts/build-runtime.mjs",
+    "build:lib": "node scripts/build-lib.mjs",
     "minify": "terser synact.js -o synact.min.js -c -m",
-    "dist": "npm run build && npm run minify",
+    "minify:lib": "terser lib/synact.lib.js -o lib/synact.lib.min.js -c -m",
+    "dist": "npm run build && npm run minify && npm run build:lib && npm run minify:lib",
     "build:docs": "esbuild docs/app/app.js --bundle --minify --format=esm --keep-names --outfile=bundled.js"
   },
   "devDependencies": {

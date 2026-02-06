@@ -7,7 +7,12 @@ export const runtime = {
     mountedContainers: new Set(),
     globalContainerId: 0,
     containerIdMap: new WeakMap(),
-    CONTEXT_UNSET: Symbol("context_unset")
+    CONTEXT_UNSET: Symbol("context_unset"),
+    config: {
+        errorMode: "console",
+        logErrors: true,
+        onError: null
+    }
 };
 
 export function generateContainerId(container) {
