@@ -51,14 +51,40 @@ To keep core SynactJS lightweight, prebuilt UI components are shipped as a separ
 ```
 
 Available globals after loading the optional library:
+Layout/data:
 - `SynactLib.AppShell`
 - `SynactLib.Grid`
+- `SynactLib.Stack`
 - `SynactLib.Card`
 - `SynactLib.StatCard`
 - `SynactLib.DataTable`
+- `SynactLib.KeyValueList`
+- `SynactLib.EmptyState`
 - `SynactLib.SparkBars`
+
+Shadcn-style primitives:
 - `SynactLib.Button`
 - `SynactLib.Badge`
+- `SynactLib.Input`
+- `SynactLib.Textarea`
+- `SynactLib.SelectField`
+- `SynactLib.Switch`
+- `SynactLib.Progress`
+- `SynactLib.Alert`
+- `SynactLib.Divider`
+- `SynactLib.Kbd`
+- `SynactLib.Toolbar`
+- `SynactLib.Tabs`
+- `SynactLib.Accordion`
+- `SynactLib.Modal`
+
+Browser-powered components:
+- `SynactLib.ClipboardButton`
+- `SynactLib.ShareButton`
+- `SynactLib.NetworkStatusBadge`
+- `SynactLib.ThemeToggle`
+- `SynactLib.FileDropzone`
+- `SynactLib.GeolocationCard`
 
 Example dashboard with minimal HTML:
 
@@ -87,6 +113,22 @@ Example dashboard with minimal HTML:
 ```
 
 Full mock data example file in this repo: `dashboard.html`
+
+Browser-powered quick example:
+
+```js
+const [modalOpen, setModalOpen] = useState(false);
+
+SynactLib.Toolbar({
+  children: [
+    SynactLib.ThemeToggle({}),
+    SynactLib.NetworkStatusBadge({}),
+    SynactLib.ClipboardButton({ text: "https://your-app.example", label: "Copy Link" }),
+    SynactLib.ShareButton({ data: { title: "Dashboard", url: location.href } }),
+    SynactLib.Button({ variant: "primary", onClick: () => setModalOpen(true) }, "Open Modal")
+  ]
+});
+```
 
 ---
 

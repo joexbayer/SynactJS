@@ -165,10 +165,11 @@ function Metrics() {
             return [
                 Heading({ text: 'Component Library (`lib/`)' }),
                 Paragraph({ text: 'SynactLib is an optional add-on for dashboards/admin UIs. Keep it separate to avoid bloating the base runtime for users who only need core hooks + rendering.' }),
+                Paragraph({ text: 'The current library includes a shadcn-style primitive set plus browser-powered components.' }),
                 BulletList([
-                    'AppShell, Grid, Card, StatCard',
-                    'DataTable, SparkBars',
-                    'Button, Badge, Toolbar'
+                    'Layout/data: AppShell, Grid, Stack, Card, StatCard, DataTable, KeyValueList, EmptyState, SparkBars',
+                    'Primitives: Button, Badge, Input, Textarea, SelectField, Switch, Progress, Alert, Divider, Kbd, Tabs, Accordion, Modal',
+                    'Browser-powered: ClipboardButton, ShareButton, NetworkStatusBadge, ThemeToggle, FileDropzone, GeolocationCard'
                 ]),
                 CodeBlock({
                     language: 'html',
@@ -190,6 +191,23 @@ function Metrics() {
 
   SynactJS.render(Dashboard, 'app');
 </script>`
+                }),
+                CodeBlock({
+                    language: 'js',
+                    codeText: `function QuickActions() {
+  const [open, setOpen] = useState(false);
+
+  return SynactLib.Toolbar({
+    children: [
+      SynactLib.ThemeToggle({}),
+      SynactLib.NetworkStatusBadge({}),
+      SynactLib.ClipboardButton({ text: location.href }),
+      SynactLib.ShareButton({ data: { title: 'Synact Dashboard', url: location.href } }),
+      SynactLib.Button({ variant: 'primary', onClick: () => setOpen(true) }, 'Open Modal'),
+      SynactLib.Modal({ open, title: 'Hello', onClose: () => setOpen(false), children: 'Modal content' })
+    ]
+  });
+}`
                 }),
                 Paragraph({ text: 'A full mock dashboard example is included at `/dashboard.html` in the repository root.' })
             ];
