@@ -7,6 +7,11 @@ import { ExamplesView } from './examples.js';
 import { Heading, Paragraph, Box, Container, Subheading } from './components/ui.js';
 
 const ThemeContext = createContext("light");
+const routePrefix = (() => {
+    if (typeof window === "undefined") return "/SynactJS";
+    if (window.location.pathname.startsWith("/SynactJS")) return "/SynactJS";
+    return "";
+})();
 
 function InnerApp() {
     const routes = {
@@ -65,7 +70,7 @@ function InnerApp() {
         )
     }
 
-    return h(RouteView, { routes, prefix: '/SynactJS' }, null);
+    return h(RouteView, { routes, prefix: routePrefix }, null);
 }
 
 export function App() {
@@ -74,7 +79,3 @@ export function App() {
         children: h(InnerApp)
     });
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-    window.SynactJS.register(App);
-});

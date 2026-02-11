@@ -61,6 +61,33 @@ export function ExamplesView() {
                     min: "2023-01-01 00:00",
                     max: "2024-12-31 23:59"
                 }),
+                Subheading({ text: 'Dashboard Starter (SynactLib + Helpers)', className: 'mt-6' }),
+                Paragraph({ text: 'Use the optional SynactLib package for prebuilt dashboard components and pair it with helper hooks like useFetch/useWebSocket.' }),
+                Box({
+                    style: 'background:#f6f8fa;padding:1rem;border-radius:6px;margin:1rem 0;font-family:monospace;',
+                    children: [
+                        pre({ class: 'text-sm leading-relaxed overflow-scroll' },
+                            code({ class: 'language-html' },
+`<div id="app"></div>
+<script src="./synact.js"></script>
+<script src="./lib/synact.lib.js"></script>
+<script>
+function Dashboard() {
+  const { data, loading } = useFetch("/api/stats");
+  return SynactLib.AppShell({
+    title: "Operations",
+    children: [
+      loading
+        ? SynactLib.Card({ children: "Loading..." })
+        : SynactLib.StatCard({ label: "Revenue", value: data.revenue })
+    ]
+  });
+}
+SynactJS.render(Dashboard, "app");
+</script>`.trim())
+                        )
+                    ]
+                }),
                 div({ class: "text-lg font-semibold mb-2 mt-6" }, "More Info & Examples"),
                 div({ class: "mb-2" },
                     "Explore the source code and examples for this website on ",

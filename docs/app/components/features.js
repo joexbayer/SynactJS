@@ -43,6 +43,16 @@ export function FeaturesSection() {
                 title: 'Components Anywhere',
                 description: 'Mount components declaratively with `data-component` on any DOM node...',
                 details: 'Enhance static HTML pages by attaching interactive components via the `data-component` attribute. SynactJS automatically scans and mounts these components, enabling progressive enhancement without complex hydration logic. Great for server-rendered pages, dashboards, documentation, or isolated widgets.'
+            }),
+            h(Feature, {
+                title: 'Browser Helpers Built-In',
+                description: 'Fetch, WebSockets, storage, media-query, and timer abstractions that fit the hook model...',
+                details: 'SynactJS includes helper APIs like `createHttpClient`, `useFetch`, `createWebSocket`, `useWebSocket`, `useLocalStorage`, `useOnlineStatus`, `useMediaQuery`, and polling/debounce helpers. They are exposed globally and under `SynactJS.helpers`, making browser-native capabilities easier to use without extra utility libraries.'
+            }),
+            h(Feature, {
+                title: 'Optional UI Library',
+                description: 'Use SynactLib for prebuilt dashboard/admin components without bloating core runtime...',
+                details: 'The optional `lib/synact.lib.js` bundle provides `AppShell`, `Grid`, `StatCard`, `DataTable`, and related UI components. It is loaded separately so users that only want core runtime behavior are not forced to download extra UI code.'
             })
         ]
     });
