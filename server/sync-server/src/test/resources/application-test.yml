@@ -1,0 +1,22 @@
+server:
+  port: 0
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:syncserver;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+
+sync:
+  hmac-secret: test-secret-change-me
+  access-token-ttl-seconds: 900
+  refresh-token-ttl-days: 30
+  cookie-name: synact_refresh
+  cookie-secure: false
+  allowed-origins:
+    - http://localhost:4173

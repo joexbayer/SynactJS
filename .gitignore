@@ -6,3 +6,21 @@ npm-debug.log
 package-lock.json
 .env
 dist/
+
+# Java / Spring Boot (server/sync-server)
+server/sync-server/target/
+server/sync-server/build/
+server/sync-server/out/
+server/sync-server/.gradle/
+server/sync-server/*.log
+server/sync-server/hs_err_pid*
+server/sync-server/replay_pid*
+server/sync-server/.idea/
+server/sync-server/*.iml
+server/sync-server/.classpath
+server/sync-server/.project
+server/sync-server/.settings/
+server/sync-server/.vscode/
+
+# Test
+plants/

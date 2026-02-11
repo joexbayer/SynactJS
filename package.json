@@ -1,24 +1,13 @@
 {
+  "name": "synactjs-monorepo",
+  "private": true,
   "type": "module",
   "scripts": {
-    "test": "jest",
-    "build": "node scripts/build-runtime.mjs",
-    "build:lib": "node scripts/build-lib.mjs",
-    "minify": "terser synact.js -o synact.min.js -c -m",
-    "minify:lib": "terser lib/synact.lib.js -o lib/synact.lib.min.js -c -m",
-    "dist": "npm run build && npm run minify && npm run build:lib && npm run minify:lib",
-    "build:docs": "esbuild docs/app/app.js --bundle --minify --format=esm --keep-names --outfile=bundled.js"
-  },
-  "devDependencies": {
-    "esbuild": "^0.25.6",
-    "jest": "^30.0.4",
-    "jest-environment-jsdom": "^30.0.4",
-    "terser": "^5.20.0"
-  },
-  "jest": {
-    "testEnvironment": "jsdom",
-    "roots": [
-      "<rootDir>/tests"
-    ]
+    "framework:test": "npm --prefix framework run test --",
+    "framework:build": "npm --prefix framework run build",
+    "framework:build:plants": "npm --prefix framework run build:plants",
+    "framework:dist": "npm --prefix framework run dist",
+    "server:start": "mvn -f server/sync-server/pom.xml spring-boot:run",
+    "create:app": "node framework/scripts/create-synact-app.mjs"
   }
 }

@@ -1,0 +1,24 @@
+target/
+build/
+out/
+.gradle/
+
+# Local database files
+*.db
+*.db-shm
+*.db-wal
+*.mv.db
+*.trace.db
+
+# Logs / crash dumps
+*.log
+hs_err_pid*
+replay_pid*
+
+# IDE / editor
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.vscode/

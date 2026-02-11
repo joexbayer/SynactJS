@@ -1,0 +1,25 @@
+server:
+  port: ${PORT:8787}
+
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+  datasource:
+    url: jdbc:h2:file:${SYNC_DB_PATH:./sync-server/syncdb};DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+sync:
+  hmac-secret: ${SYNC_HMAC_SECRET:dev-only-change-me}
+  access-token-ttl-seconds: ${SYNC_ACCESS_TOKEN_TTL_SECONDS:900}
+  refresh-token-ttl-days: ${SYNC_REFRESH_TOKEN_TTL_DAYS:30}
+  cookie-name: ${SYNC_COOKIE_NAME:synact_refresh}
+  cookie-secure: ${SYNC_COOKIE_SECURE:false}
+  allowed-origins: ${SYNC_ALLOWED_ORIGINS:}

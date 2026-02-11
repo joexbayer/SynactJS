@@ -1,0 +1,37 @@
+{
+  "name": "synactjs",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./runtime": "./synact.js",
+    "./runtime/min": "./synact.min.js",
+    "./lib": "./lib/synact.lib.js"
+  },
+  "scripts": {
+    "test": "jest",
+    "build": "node scripts/build-runtime.mjs",
+    "build:plants:css": "npx tailwindcss@3.4.17 -i ./plants/tailwind.input.css -o ./plants/tailwind.css --content \"./plants/**/*.{html,js}\" --minify",
+    "build:plants": "npm run build:plants:css && node scripts/build-plants-demo.mjs",
+    "start:sync-server": "mvn -f ../server/sync-server/pom.xml spring-boot:run",
+    "build:lib": "node scripts/build-lib.mjs",
+    "minify": "terser synact.js -o synact.min.js -c -m",
+    "minify:lib": "terser lib/synact.lib.js -o lib/synact.lib.min.js -c -m",
+    "dist": "npm run build && npm run minify && npm run build:lib && npm run minify:lib",
+    "build:docs": "esbuild docs/app/app.js --bundle --minify --format=esm --keep-names --outfile=bundled.js",
+    "create:app": "node scripts/create-synact-app.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.6",
+    "jest": "^30.0.4",
+    "jest-environment-jsdom": "^30.0.4",
+    "terser": "^5.20.0"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "roots": [
+      "<rootDir>/tests"
+    ]
+  }
+}

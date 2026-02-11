@@ -1,0 +1,16 @@
+{
+  "name": "synact-sample-pwa",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "node scripts/build.mjs",
+    "preview": "python3 -m http.server 4173"
+  },
+  "dependencies": {
+    "synactjs": "file:.."
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.6"
+  }
+}
