@@ -202,6 +202,7 @@ Design notes:
 ## Create App Boilerplate
 
 Default scaffold template is `pwa-sync` (manifest + service worker + sync settings prewired), but this is not enforced.
+Manual sync UI is optional and disabled by default.
 
 From repo root:
 
@@ -224,6 +225,12 @@ Use the minimal template instead:
 
 ```sh
 npm run create:app -- my-app --template basic
+```
+
+Add a manual sync button scaffold only when needed:
+
+```sh
+npm run create:app -- my-app --manual-sync
 ```
 
 Core methods:
@@ -460,7 +467,7 @@ function MobileHome() {
 
 ## Real-World Demo App
 
-A full multi-view example app lives in [`plants/index.html`](plants/index.html):
+A full multi-view example app lives in [`../example/plants/index.html`](../example/plants/index.html):
 - custom Tailwind UI components (no `SynactLib` components),
 - local-first plant records and journal,
 - dedicated backup/import-export view,

@@ -7,15 +7,18 @@ const VALID_TEMPLATES = new Set(["pwa-sync", "basic"]);
 const DEFAULT_TEMPLATE = "pwa-sync";
 
 function printUsage() {
-    console.log("Usage: create-synact-app <app-name-or-path> [--template pwa-sync|basic]");
+    console.log("Usage: create-synact-app <app-name-or-path> [--template pwa-sync|basic] [--manual-sync]");
     console.log("Default template: pwa-sync");
+    console.log("Default manual sync UI: disabled");
     console.log("Example: create-synact-app my-mobile-pwa --template basic");
+    console.log("Example: create-synact-app my-mobile-pwa --manual-sync");
 }
 
 function parseArgs(rawArgs) {
     const args = Array.isArray(rawArgs) ? rawArgs : [];
     let targetArg = "";
     let template = DEFAULT_TEMPLATE;
+    let includeManualSync = false;
 
     for (let index = 0; index < args.length; index += 1) {
         const arg = args[index];
@@ -36,6 +39,11 @@ function parseArgs(rawArgs) {
 
         if (arg.startsWith("--template=")) {
             template = String(arg.split("=").slice(1).join("=") || "").trim().toLowerCase();
+            continue;
+        }
+
+        if (arg === "--manual-sync" || arg === "--with-manual-sync") {
+            includeManualSync = true;
             continue;
         }
 
@@ -61,7 +69,8 @@ function parseArgs(rawArgs) {
     return {
         help: false,
         targetArg,
-        template
+        template,
+        includeManualSync
     };
 }
 
@@ -131,7 +140,8 @@ const ctx = await context({
 });
 
 await ctx.watch();
-const { host, port } = await ctx.serve({ servedir: "." });
+const { hosts, port } = await ctx.serve({ servedir: "." });
+const host = Array.isArray(hosts) && hosts.length > 0 ? hosts[0] : "127.0.0.1";
 
 console.log(\`Synact dev server running at http://\${host}:\${port}\`);
 `,
@@ -242,7 +252,35 @@ SynactJS.start({
     };
 }
 
-function createPwaSyncTemplateFiles({ appFolderName, packageName }) {
+function createPwaSyncTemplateFiles({ appFolderName, packageName, includeManualSync = false }) {
+    const incrementSpacingStyle = includeManualSync ? ',\n          marginRight: "8px"' : "";
+    const manualSyncButton = includeManualSync ? `,
+    button(
+      {
+        onClick: async () => {
+          const syncFeature = window.__synactSyncFeature;
+          if (!syncFeature) return;
+          try {
+            await syncFeature.sync({ direction: "both" });
+            console.log("Manual sync complete.");
+          } catch (error) {
+            console.warn("Manual sync failed", error);
+          }
+        },
+        style: {
+          padding: "8px 12px",
+          borderRadius: "8px",
+          border: "1px solid #0ea5e9",
+          background: "#0ea5e9",
+          color: "white",
+          cursor: "pointer"
+        }
+      },
+      "Manual Sync"
+    )` : "";
+    const manualSyncGlobal = includeManualSync ? `
+  window.__synactSyncFeature = syncFeature;` : "";
+
     return {
         "index.html": `<!doctype html>
 <html lang="en">
@@ -381,35 +419,11 @@ export function App() {
           border: "1px solid #10b981",
           background: "#10b981",
           color: "white",
-          cursor: "pointer",
-          marginRight: "8px"
+          cursor: "pointer"${incrementSpacingStyle}
         }
       },
       "Increment"
-    ),
-    button(
-      {
-        onClick: async () => {
-          const syncFeature = window.__synactSyncFeature;
-          if (!syncFeature) return;
-          try {
-            await syncFeature.sync({ direction: "both" });
-            console.log("Manual sync complete.");
-          } catch (error) {
-            console.warn("Manual sync failed", error);
-          }
-        },
-        style: {
-          padding: "8px 12px",
-          borderRadius: "8px",
-          border: "1px solid #0ea5e9",
-          background: "#0ea5e9",
-          color: "white",
-          cursor: "pointer"
-        }
-      },
-      "Manual Sync"
-    )
+    )${manualSyncButton}
   );
 }
 `,
@@ -419,58 +433,67 @@ import { readSyncSettings, writeSyncSettings } from "./sync-settings.js";
 
 const APP_ID = "${packageName}";
 
-await SynactJS.start({
-  app: App,
-  container: "#app",
-  waitForDom: true,
-  once: true,
-  data: {
-    appId: APP_ID,
-    engine: "auto",
-    schemaVersion: 1
-  },
-  pwa: {
-    init: true,
-    register: true,
-    registerOptions: {
-      swUrl: "./sw.js",
-      scope: "./"
+async function boot() {
+  await SynactJS.start({
+    app: App,
+    container: "#app",
+    waitForDom: true,
+    once: true,
+    data: {
+      appId: APP_ID,
+      engine: "auto",
+      schemaVersion: 1
+    },
+    pwa: {
+      init: true,
+      register: true,
+      registerOptions: {
+        swUrl: "./sw.js",
+        scope: "./"
+      }
     }
+  });
+
+  const syncSettings = await readSyncSettings(APP_ID);
+  const syncFeature = SynactJS.sync.initFeatureService({
+    dataApi: SynactJS.data,
+    defaults: {
+      baseUrl: syncSettings.syncServerUrl,
+      appId: syncSettings.syncAppId || APP_ID,
+      rememberAuth: syncSettings.syncRememberAuth !== false
+    },
+    readSettings: () => readSyncSettings(APP_ID),
+    writeSettings: (patch) => writeSyncSettings(APP_ID, patch),
+    persistAuthEmail: false
+  });
+
+  await syncFeature.bootstrap({ restoreAuth: true, refresh: true, silent: true });
+  await syncFeature.startAutoSync({
+    immediate: false,
+    onError: (error) => {
+      console.warn("Auto sync failed:", error);
+    }
+  });
+${manualSyncGlobal}
+}
+
+boot().catch((error) => {
+  const mount = document.querySelector("#app");
+  if (mount) {
+    mount.textContent = \`Failed to start app: \${error?.message || String(error)}\`;
   }
+  console.error(error);
 });
-
-const syncSettings = await readSyncSettings(APP_ID);
-const syncFeature = SynactJS.sync.initFeatureService({
-  dataApi: SynactJS.data,
-  defaults: {
-    baseUrl: syncSettings.syncServerUrl,
-    appId: syncSettings.syncAppId || APP_ID,
-    rememberAuth: syncSettings.syncRememberAuth !== false
-  },
-  readSettings: () => readSyncSettings(APP_ID),
-  writeSettings: (patch) => writeSyncSettings(APP_ID, patch),
-  persistAuthEmail: false
-});
-
-await syncFeature.bootstrap({ restoreAuth: true, refresh: true, silent: true });
-await syncFeature.startAutoSync({
-  immediate: false,
-  onError: (error) => {
-    console.warn("Auto sync failed:", error);
-  }
-});
-
-window.__synactSyncFeature = syncFeature;
 `
     };
 }
 
-function getTemplateFiles({ template, appFolderName, packageName }) {
+function getTemplateFiles({ template, appFolderName, packageName, includeManualSync }) {
     if (template === "basic") {
         return createBasicTemplateFiles({ appFolderName });
     }
 
-    return createPwaSyncTemplateFiles({ appFolderName, packageName });
+    return createPwaSyncTemplateFiles({ appFolderName, packageName, includeManualSync });
 }
 
 async function main() {
@@ -480,7 +503,7 @@ async function main() {
         process.exit(0);
     }
 
-    const { targetArg, template } = parsed;
+    const { targetArg, template, includeManualSync } = parsed;
     const targetDir = path.resolve(process.cwd(), targetArg);
     const appFolderName = path.basename(targetDir);
     const packageName = toPackageName(appFolderName);
@@ -494,7 +517,7 @@ async function main() {
 
     const files = {
         ...createCommonFiles({ packageName, synactDependency, appFolderName, template }),
-        ...getTemplateFiles({ template, appFolderName, packageName })
+        ...getTemplateFiles({ template, appFolderName, packageName, includeManualSync })
     };
 
     await Promise.all(
@@ -503,6 +526,7 @@ async function main() {
 
     console.log(`Created Synact app at ${targetDir}`);
     console.log(`Template: ${template}`);
+    console.log(`Manual sync UI: ${includeManualSync ? "enabled" : "disabled"}`);
     console.log("Next steps:");
     console.log(`  cd ${targetArg}`);
     console.log("  npm install");

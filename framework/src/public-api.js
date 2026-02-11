@@ -783,8 +783,9 @@ export function attachBrowserGlobals() {
 }
 
 export function attachCommonJSExports() {
-    if (typeof module !== "undefined" && module.exports) {
-        module.exports = {
+    const cjsModule = typeof globalThis === "object" ? globalThis.module : undefined;
+    if (cjsModule && cjsModule.exports) {
+        cjsModule.exports = {
             ...SynactJSCore,
             SynactJS
         };

@@ -1,8 +1,8 @@
 import { build } from "esbuild";
 
 await build({
-    entryPoints: ["plants/app.js"],
-    outfile: "plants/app.bundle.js",
+    entryPoints: ["../example/plants/app.js"],
+    outfile: "../example/plants/app.bundle.js",
     bundle: true,
     format: "iife",
     platform: "browser",

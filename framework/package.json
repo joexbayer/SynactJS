@@ -12,7 +12,7 @@
   "scripts": {
     "test": "jest",
     "build": "node scripts/build-runtime.mjs",
-    "build:plants:css": "npx tailwindcss@3.4.17 -i ./plants/tailwind.input.css -o ./plants/tailwind.css --content \"./plants/**/*.{html,js}\" --minify",
+    "build:plants:css": "npx tailwindcss@3.4.17 -i ../example/plants/tailwind.input.css -o ../example/plants/tailwind.css --content \"../example/plants/**/*.{html,js}\" --minify",
     "build:plants": "npm run build:plants:css && node scripts/build-plants-demo.mjs",
     "start:sync-server": "mvn -f ../server/sync-server/pom.xml spring-boot:run",
     "build:lib": "node scripts/build-lib.mjs",
